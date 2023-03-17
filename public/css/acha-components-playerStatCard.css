@@ -1,0 +1,255 @@
+#content {
+  width: 100%;
+  max-width: 1080px;
+  margin: auto;
+  position: relative;
+}
+
+.player_bio_holder {
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+}
+
+.player_bio_inner {
+  height: 100%;
+  padding: 10px;
+  position: relative;
+  z-index: 3;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  overflow: hidden;
+}
+.player_img {
+  width: 27.634%;
+  max-height: 320px;
+  max-width: 320px;
+  display: block;
+  float: left;
+  z-index: 1;
+  overflow: hidden;
+}
+.player_img img {
+  width: 100%;
+}
+
+.player_info {
+  padding: 20px 0 0;
+  display: block;
+  z-index: 2;
+  width: 68%;
+  float: right;
+  min-height: 190px;
+}
+
+h1.player-name {
+  font-size: 28px;
+  letter-spacing: 0.5px;
+  width: 100%;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  margin-top: 10px;
+}
+
+h3.player-position {
+  font-size: 18px;
+  letter-spacing: 0.5px;
+  font-weight: 700;
+  margin-bottom: 25px;
+}
+
+.player_bio_inner h2.player-number {
+  font-size: 28px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  position: absolute;
+  right: 18px;
+  top: 0;
+  border-bottom: none;
+  height: 114px;
+  line-height: 114px;
+  border-width: 0;
+  border-left-width: 1px;
+  border-left-style: solid;
+  padding: 0 30px;
+  font-weight: 700;
+  margin-bottom: 20px;
+  margin-top: 15px;
+}
+
+.panel-top {
+  padding: 0;
+  border-top-width: 1px;
+  border-bottom-width: 1px;
+  border-style: solid;
+  border-left: 0;
+  border-right: 0;
+  float: left;
+  width: 100%;
+  margin-bottom: 25px;
+  list-style: none;
+  clear: both;
+}
+
+.panel-bottom {
+  padding: 0;
+  float: left;
+  width: 100%;
+  margin-bottom: 25px;
+  list-style: none;
+  clear: both;
+}
+
+ul.heading-font li {
+  text-transform: uppercase;
+  font-weight: 700;
+  padding-right: 10px;
+}
+
+.player_info ul {
+  list-style: none;
+  clear: both;
+  float: left;
+  width: 100%;
+  padding: 0;
+}
+.player_info ul li {
+  list-style: none;
+  float: left;
+  width: 50%;
+  font-size: 17px;
+  letter-spacing: 1px;
+  line-height: 28.05px;
+  margin: 0 0px 15px;
+}
+
+ul.panel-top li {
+  float: left;
+  width: 25%;
+  margin: 20px 0;
+  list-style: none;
+  font-size: 17px;
+  letter-spacing: 1px;
+  line-height: 28.05px;
+}
+
+.player_stats_holder {
+  margin-top: 20px;
+  padding: 0 10px;
+}
+
+.widget_title_wrapper {
+  position: relative;
+  clear: both;
+  background: #000000;
+  top: 0;
+  left: 0;
+  height: 60px;
+  line-height: 60px;
+  width: 100%;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.widget_title {
+  letter-spacing: 1.5px;
+  line-height: 25px;
+  font-weight: 700;
+  color: #ffffff;
+  display: inline-block;
+  padding: 0 17px;
+  margin: 0;
+  font-size: 20px;
+}
+
+.player_stats_holder .h2 {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 0;
+  text-align: center;
+  text-transform: uppercase;
+  margin-top: 20px;
+  padding-bottom: 10px;
+  line-height: 25px;
+  letter-spacing: 0.5px;
+}
+
+.table-wrapper table {
+  min-width: calc(100% - 1px);
+  margin-bottom: 30px;
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.table-wrapper table tr:nth-child(odd) {
+  background: #f3f3f3;
+}
+
+.table-wrapper table tr th.table_header {
+  text-transform: none;
+  font-size: 11px;
+  border: none;
+  font-weight: bold;
+  letter-spacing: 1px;
+  line-height: 23.1px;
+}
+
+.table-wrapper table tr td {
+  text-align: center;
+  border: 1px solid #e1e3e3;
+  display: table-cell;
+  padding: 13px 20px;
+  background: #fff;
+  font-size: 14px;
+  letter-spacing: 1px;
+  line-height: 23.1px;
+  white-space: nowrap;
+}
+
+@media screen and (max-width: 767px) {
+  .player_img {
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+  }
+  #content {
+    font-size: 22px;
+    letter-spacing: 0.5px;
+    margin-bottom: 0;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+  .player_info {
+    width: 100%;
+    float: left;
+  }
+  .player_top {
+    position: relative;
+  }
+  h1.player-name {
+    font-size: 22px;
+    letter-spacing: 0.5px;
+    margin-bottom: 0;
+  }
+  h3.player-position {
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  .player_bio_inner h2.player-number {
+    margin-top: 0;
+    height: 60px;
+    line-height: 50px;
+  }
+  .player_info ul {
+    padding: 10px 0;
+    margin-bottom: 0px;
+  }
+  .player_info ul li {
+    width: 100%;
+    float: left;
+    margin: 10px 0 0;
+    text-align: left;
+  }
+}
