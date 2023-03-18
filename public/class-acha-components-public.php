@@ -116,16 +116,6 @@ class Acha_Components_Public {
 		}
 	}
 
-	public function playerCardPage() {
-		$player_id = $_POST['player_id'];
-
-		$response = 'hello world';
-		//prevents from populating db when inputs are empty
-		echo $response;
-
-		wp_die();
-    }
-
 	/**
 	 * Register the stylesheets for the public-facing side of the site.
 	 *
