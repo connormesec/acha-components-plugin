@@ -80,7 +80,6 @@ class Acha_Components
 		$this->set_locale();
 		$this->define_admin_hooks();
 		$this->define_public_hooks();
-		$this->check_for_updates();
 	}
 
 	/**
@@ -230,23 +229,5 @@ class Acha_Components
 	public function get_version()
 	{
 		return $this->version;
-	}
-
-	private function check_for_updates()
-	{
-		/**
-		 * The class responsible for updating the plugin
-		 */
-		if (!class_exists('Smashing_Updater')) {
-			include_once(plugin_dir_path(__FILE__) . '../update.php');
-		}
-
-		$updater = new Smashing_Updater(__FILE__);
-		$updater->set_username('connormesec');
-		$updater->set_repository('acha-components-plugin');
-		/*
-			$updater->authorize( 'abcdefghijk1234567890' ); // Your auth code goes here for private repos
-		*/
-		$updater->initialize();
 	}
 }

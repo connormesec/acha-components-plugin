@@ -55,6 +55,7 @@ class Acha_Components_Admin
 		$this->version = $version;
 		add_action('update_db', [$this, 'test']);
 		$this->load_dependencies();
+		$this->check_for_updates();
 	}
 
 	private function load_dependencies()
@@ -65,6 +66,7 @@ class Acha_Components_Admin
 		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-acha-components-playerStat-page.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/class-acha-components-schedule-admin-form.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/class-acha-components-roster-admin-form.php';
+		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/update.php';
 	}
 
 	public function ac_admin_menu()
@@ -322,6 +324,23 @@ class Acha_Components_Admin
 
 		wp_die();
 	}
+
+	/**
+	 * The code that runs to check for updates
+	 * This action is documented in includes/update.php
+	 */
+	function check_for_updates()
+	{
+		/**
+		 * The class responsible for updating the plugin
+		 */
+		$updater = new PDUpdater(PLUGIN_DIR_PATH .'/acha-components.php');
+		$updater->set_username('connormesec');
+		$updater->set_repository('acha-components-plugin');
+
+		$updater->initialize();
+	}
+
 
 	private function array_to_table($data)
 	{

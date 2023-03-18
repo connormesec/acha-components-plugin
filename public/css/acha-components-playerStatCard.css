@@ -114,15 +114,6 @@ ul.heading-font li {
   width: 100%;
   padding: 0;
 }
-.player_info ul li {
-  list-style: none;
-  float: left;
-  width: 50%;
-  font-size: 17px;
-  letter-spacing: 1px;
-  line-height: 28.05px;
-  margin: 0 0px 15px;
-}
 
 ul.panel-top li {
   float: left;
