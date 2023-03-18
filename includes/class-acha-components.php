@@ -238,7 +238,7 @@ class Acha_Components
 		 * The class responsible for updating the plugin
 		 */
 		if (!class_exists('Smashing_Updater')) {
-			include_once(plugin_dir_path(__FILE__) . 'updater.php');
+			include_once(plugin_dir_path(__FILE__) . '../update.php');
 		}
 
 		$updater = new Smashing_Updater(__FILE__);
