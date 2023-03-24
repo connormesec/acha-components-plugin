@@ -387,7 +387,7 @@ class Acha_Components_Admin
 	private function create_cron()
 	{
 		if (!wp_next_scheduled('test_hook')) {
-			wp_schedule_event(time(), '1min', 'test_hook');
+			wp_schedule_event(time(), 'twicedaily', 'test_hook');
 		}
 	}
 	public function cron_job_delete()
