@@ -376,7 +376,7 @@ class Acha_Components_Schedule
         $content = '
                     <div class="game_container ' . $accordion . '">
                         <div class="date_time_location">
-                            <div class="home_away_container ' . $game->home_or_away . '">
+                            <div class="home_away_container ' . strtolower($game->home_or_away) . '">
                                 <div class="home_away_text">
                                     ' . $game->home_or_away . '
                                 </div>
