@@ -64,9 +64,6 @@ class Acha_Components_Public
 				foreach ($schedule->url as $url) {
 					array_push($schedule_url_arr, $url);
 				}
-			} else {
-				echo 'make sure the shortcode title matches the schedule title';
-				continue;
 			}
 		}
 		$schedule = new Acha_Components_Schedule($schedule_url_arr, $schedule_data->style);

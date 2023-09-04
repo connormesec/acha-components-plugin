@@ -51,7 +51,6 @@ class Acha_Components_Player_Stat_Page
         $raw_data = $this->makeAsyncCurlRequests($player_id, $team_id);
         $raw_player = json_decode(substr($raw_data->raw_player_data, 1, -1));
         $raw_team = json_decode(substr($raw_data->raw_team_data, 1, -1))->roster[0]->sections;
-        $this->console_log($raw_data);
         //search for player hometown
         $hometown = '';
         foreach ($raw_team as $position) {

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * The admin-specific functionality of the plugin.
  *
@@ -49,22 +48,33 @@ class Acha_Schedule_Admin_Form
 		}
 		$html = <<<HTML
 				<div class="row">
-					<div class="col-md-10">
+					<div class="col-md-12">
 						<div class="form-group">
-							<form name="add_name" id="add_name">
 								<table class="table table-bordered" id="dynamic_field">
 									<tr class="title">
 										<td><h4>Schedule Name</h4></td>
 										<td><h4>Schedule URL</h4></td>
 										<td><h4>Schedule Shortcode</h4></td>
-										<td><h4>Game Slider Shortcode</h4></td>
 										<td><h4>Actions</h4></td>
 									</tr>
 		HTML;
         $i = 1;
         $j = 1;
         foreach($schedule_arr as $row){
-            if ($j === 1) {
+        
+			//handle csv values
+			$csvButtonClassVals = 'uploadButton';
+			$encodedData = '';
+			$buttonText = 'Upload CSV';
+			$disabled = '';
+			if($row->csvData){
+				$csvButtonClassVals = 'btn-danger removeCsvButton';
+				$encodedData = $this->encodeURIComponent($row->csvData);
+				$buttonText = 'Remove CSV';
+				$disabled = 'disabled';
+			}
+			
+			if ($j === 1) {
                 $schedule_name = ($row->scheduleName) ? $row->scheduleName : '';
                 $first_url = ($row->url[0]) ? $row->url[0] : '';
                 $html .= <<<HTML
@@ -77,8 +87,8 @@ class Acha_Schedule_Admin_Form
 								<table class="attr table table-borderless" id="dynamic_url_input_field_row_1">
 									<tr>
 										<td>
-											<input name="" id="row_url_input_1_1" style="width:100%" type="text" placeholder="Enter schedule URL" class="name_list required-entry" value="{$first_url}">
-											<td><button class="btn btn-small btn-success add" id="row_1" type="button">Add</button></td>
+											<input name="" id="row_url_input_1_1" style="width:100%" type="text" placeholder="Enter schedule URL" class="name_list required-entry {$disabled}" value="{$first_url}">
+											<td><button class="btn btn-small btn-success add {$disabled}" id="row_1" type="button">Add</button></td>
 										</td>
 									</tr>
 				HTML;
@@ -92,7 +102,7 @@ class Acha_Schedule_Admin_Form
 					$html .= <<<HTML
 					<tr id="row_url_{$j}_{$i}">
 						<td>
-							<input name="" id="row_url_input_{$j}_{$i}" style="width:100%" type="text" placeholder="Enter schedule URL" class="required-entry" value="{$url}">
+							<input name="" id="row_url_input_{$j}_{$i}" style="width:100%" type="text" placeholder="Enter schedule URL" class="required-entry {$disabled}" value="{$url}">
 							<td><button class="btn btn-danger remove" id="url_{$j}_{$i}" type="button">X</button></td>
 						</td>
 					</tr>
@@ -107,10 +117,7 @@ class Acha_Schedule_Admin_Form
 							<input	type="text" id="ac-shortcode" onfocus="this.select();" readonly="readonly" class="large-text code" value='[ac-schedule title="{$schedule_name}"]'>
 						</td>
 						<td>
-							<input type="text" id="ac-shortcode" onfocus="this.select();" readonly="readonly" class="large-text code" value='[ac-game-slider title="{$schedule_name}"]'>
-						</td>
-						<td>
-							<button type="button" name="add" id="add" class="btn btn-primary">Add Schedule</button>
+							<button type="button" name="add" id="add" class="btn btn-primary">Add Schedule</button> <button type="button" id="row_1" data="{$encodedData}" class="{$csvButtonClassVals} btn btn-secondary btn-sm">{$buttonText}</button><input type="file" id="row_1" class="csvFileInput" style="display: none;" accept=".csv">
 						</td>
 					</tr>
 					HTML;
@@ -129,8 +136,8 @@ class Acha_Schedule_Admin_Form
 								<table class="attr table table-borderless" id="dynamic_url_input_field_row_{$j}">
 									<tr>
 										<td>
-											<input name="" id="row_url_input_{$j}_{$i}" style="width:100%" type="text" placeholder="Enter schedule URL" class="required-entry" value="{$first_url}">
-											<td><button class="btn btn-small btn-success add" id="row_{$j}" type="button">Add</button></td>
+											<input name="" id="row_url_input_{$j}_{$i}" style="width:100%" type="text" placeholder="Enter schedule URL" class="required-entry {$disabled}" value="{$first_url}">
+											<td><button class="btn btn-small btn-success add {$disabled}" id="row_{$j}" type="button">Add</button></td>
 										</td>
 									</tr>
 				HTML;
@@ -144,7 +151,7 @@ class Acha_Schedule_Admin_Form
                     $html .= <<<HTML
                     <tr id="row_url_{$j}_{$i}">
                         <td>
-                            <input name="" id="row_url_input_{$j}_{$i}" type="text" style="width:100%" placeholder="Enter schedule URL" class="required-entry" value="{$url}">
+                            <input name="" id="row_url_input_{$j}_{$i}" type="text" style="width:100%" placeholder="Enter schedule URL" class="required-entry {$disabled}" value="{$url}">
                             <td><button class="btn btn-danger remove" id="url_{$j}_{$i}" type="button">X</button></td>
                         </td>
                     </tr>
@@ -160,10 +167,7 @@ class Acha_Schedule_Admin_Form
 							<input	type="text" id="ac-shortcode" onfocus="this.select();" readonly="readonly" class="large-text code" value='[ac-schedule title="{$schedule_name}"]'>
 						</td>
 						<td>
-							<input type="text" id="ac-shortcode" onfocus="this.select();" readonly="readonly" class="large-text code" value='[ac-game-slider title="{$schedule_name}"]'>
-						</td>
-						<td>
-							<button type="button" name="remove" id="{$j}" class="btn btn-danger btn_remove">X</button>
+							<button type="button" name="remove" id="{$j}" class="btn btn-danger btn_remove">X</button> <button type="button" id="row_1" data="{$encodedData}" class="{$csvButtonClassVals} btn btn-secondary btn-sm">{$buttonText}</button><input type="file" id="row_1" class="csvFileInput" style="display: none;" accept=".csv">
 						</td>
 					</tr>
 				HTML;
@@ -193,15 +197,31 @@ class Acha_Schedule_Admin_Form
 		}
         $html .= <<<HTML
 								</table>
-								<input type="submit" class="btn btn-success" name="submit" id="schedule_admin_submit" value="Submit">
-							</form>
+								
 						</div>
 					</div>
-					<div class="col-md-2">
+				</div>
+				<div class="row">
+					<div class="col-md-12">
 					<table class="table table-bordered" id="style_field">
 						<tr class="title">
 							<th>
 								<h4>Style</h4>
+							</th>
+							<th>
+								<h5>Primary Color</h5>
+							</th>
+							<th>
+								<h5>Secondary Color</h5>
+							</th>
+							<th>
+								<h5>Month Color</h5>
+							</th>
+							<th>
+								<h5>Text Color</h5>
+							</th>
+							<th>
+								<h5>Container Color</h5>
 							</th>
 						</tr>
 						<tr>
@@ -211,42 +231,29 @@ class Acha_Schedule_Admin_Form
 									<option {$dropdown} value="2">Dropdown</option>
 								</select>
 							</td>
-						</tr>
-						<tr>
 							<td>
-								<label for="primary_color">Primary Color:</label>
-								<input type="color" id="primary_color" name="primary_color" value="{$primary_color}">
+								<input type="color" class="m-auto form-control form-control-color" id="primary_color" name="primary_color" value="{$primary_color}">
 							</td>
-						</tr>
-						<tr>
 							<td>
-								<label for="secondary_color">Secondary Color:</label>
-								<input type="color" id="secondary_color" name="secondary_color" value="{$secondary_color}">
+								<input type="color" class="m-auto form-control form-control-color" id="secondary_color" name="secondary_color" value="{$secondary_color}">
 							</td>
-						</tr>
-						<tr>
 							<td>
-								<label for="header_text_color">Month Text Color:</label>
-								<input type="color" id="header_text_color" name="header_text_color" value="{$header_text_color}">
+								<input type="color" class="m-auto form-control form-control-color" id="header_text_color" name="header_text_color" value="{$header_text_color}">
 							</td>
-						</tr>
-						<tr>
 							<td>
-								<label for="text_color">Text Color:</label>
-								<input type="color" id="text_color" name="text_color" value="{$text_color}">
+								<input type="color" class="m-auto form-control form-control-color" id="text_color" name="text_color" value="{$text_color}">
 							</td>
-						</tr>
-						<tr>
 							<td>
-								<label for="container_bg_color">Container Color:</label>
-								<input type="color" id="container_bg_color" name="container_bg_color" value="{$container_bg_color}">
+								<input type="color" class="m-auto form-control form-control-color" id="container_bg_color" name="container_bg_color" value="{$container_bg_color}">
 							</td>
 						</tr>
 					</table>
 					
 					</div>
 				</div>
+				<input type="submit" class="btn btn-success" name="submit" id="schedule_admin_submit" value="Submit">
 			</div>
+			<div style="height:2rem"></div>
 		HTML;
 		
 		$html .= $this->formJs($i, $j);
@@ -272,9 +279,8 @@ class Acha_Schedule_Admin_Form
 						'<tr id="row_url_'+j+'_'+i+'"><td><input name="row_url_input_'+j+'_'+i+'" id="" type="text" style="width:100%" placeholder="Enter schedule URL" class="required-entry">' +
 						'<td><button class="btn btn-small btn-success add" id="row_'+i+'" type="button">Add</button></td></td></tr></table>' +
 						'</div></td><td><input	type="text" id="ac-shortcode" onfocus="this.select();" readonly="readonly" class="large-text code" value="[ac-schedule title=""]">' +
-						'</td><td><input type="text" id="ac-shortcode" onfocus="this.select();" readonly="readonly" class="large-text code" value="[ac-game-slider title=""]">' +
-						'</td><td><button type="button" name="remove" id="{$j}" class="btn btn-danger btn_remove">X</button></td>' +
-						'<button type="button" name="remove" id="'+j+'" class="btn btn-danger btn_remove">X</button></td></tr>');
+						'</td><td><button type="button" name="remove" id="{$j}" class="btn btn-danger btn_remove">X</button> ' +
+						'<button type="button" id="row_{$j}" class="uploadButton btn btn-secondary btn-sm">Upload CSV</button><input type="file" class="csvFileInput" id="row_{$j}" style="display: none;" accept=".csv"></td></tr>');
 			});
 
 			jQuery(document).on("click", ".btn_remove", function () {
@@ -287,12 +293,20 @@ class Acha_Schedule_Admin_Form
 				let data_arr = [];
 				jQuery('.row_item').map(function () {
 					const scheduleName = jQuery(this).find('input[placeholder="Enter schedule name"]').val();
+					//remember: we change the url value to the name of the csv so we will use this value to check localstorage
 					const url = jQuery(this).find('input[placeholder="Enter schedule URL"]').map(function() { return jQuery(this).val() }).get();
+					const csvButtonDataAttr = jQuery(this).find('.removeCsvButton').attr('data');
+					let csvData = null;
+					if (csvButtonDataAttr){
+						csvData = decodeURIComponent(csvButtonDataAttr);
+					}
 					data_arr.push(
-						{ 
-						scheduleName, 
-						url 
-					});
+						{
+							scheduleName, 
+							url,
+							csvData
+						}
+					);
 				});
 				const style = jQuery('#scheduleStyleSelect').val();
 				const primaryColor = jQuery('#primary_color').val();
@@ -318,7 +332,6 @@ class Acha_Schedule_Admin_Form
 				}),
 				'nonce' : '{$nonce}'
 				};
-				console.log(data)
 				jQuery('#spinner-div').show();
 				jQuery.post(ajaxurl, data, function(response) {
 					if (response) {
@@ -349,10 +362,109 @@ class Acha_Schedule_Admin_Form
 				jQuery(this).parent().next('td').next('td').next('td').find('#ac-shortcode').val('[ac-schedule title="' + jQuery(this).val() +'"]');
 			});
 
-			});	
+			//csv upload button
+			jQuery(document).on('click', '.uploadButton', function() {
+				alert('Make sure your CSV is formatted properly...\\n' +
+						'Header row needs to match these values exactly! \\n' +
+						'month,date,time,opponent,home_or_away,notes\\n' +
+						'Example Row:\\n' +
+						'September,\"Friday, Sep 22nd\",6:30 PM,Boise State,Home,Ressler Rink');
+				jQuery(this).closest('td').find('input').click();
+			});
+			// Handle the file input change event
+			jQuery(document).on('change', '.csvFileInput', function() {
+				let row = jQuery(this).attr('id');
+				// Get the selected file
+				const selectedFile = this.files[0];
+				let changeAddCsvButton = jQuery(this).closest('td').find('.uploadButton');
+			
+				// Check if a file was selected
+				if (selectedFile) {
+					const reader = new FileReader();
+					let data;
+					reader.onload = function(e) {
+						const csvText = e.target.result;
+						const jsonData = csvToJson(csvText);
+						// You can display the JSON data or perform further actions here
+						data = JSON.stringify(jsonData);
+						
+						changeAddCsvButton.attr('data', encodeURIComponent(data));
+					}
+					reader.readAsText(selectedFile);
+
+					let scheduleCell = jQuery(this).closest('tr').find('.required-entry');
+						scheduleCell.val(selectedFile.name);
+						scheduleCell.addClass('disabled');
+					
+					jQuery(this).closest('tr').find('.add').addClass('disabled');
+					//make button red
+						changeAddCsvButton.html("Remove CSV");
+						changeAddCsvButton.removeClass('btn-seconary uploadButton');
+						changeAddCsvButton.addClass('btn-danger removeCsvButton');
+					
+				}
+
+				function csvToJson(csv) {
+					//sketchy way of getting main logo via favicon
+					const logoUrl = jQuery('link[rel="icon"]').attr('href');
+
+					const lines = csv.replace('\\r', '').split('\\n');
+					const result = [];
+					const headers = lines[0].split(',');
+					for (let i = 1; i < lines.length; i++) {
+						const obj = {logoUrl : logoUrl};
+						const currentLine = lines[i].split(',');
+						let currentIndex = 0;
+						
+						for (let j = 0; j < headers.length; j++) {
+							// Check if the value contains a double quote
+							if (currentLine[currentIndex].startsWith('"')) {
+								let combinedValue = currentLine[currentIndex].replace(/^"/, '');
+
+								while (!currentLine[currentIndex].endsWith('"')) {
+									currentIndex++;
+									combinedValue += ',' + currentLine[currentIndex];
+								}
+
+								combinedValue = combinedValue.replace(/"$/, ''); // Remove trailing double quote
+								currentIndex++;
+								obj[headers[j]] = combinedValue.replace('\\r', '');
+							} else {
+								obj[headers[j]] = currentLine[currentIndex].replace('\\r', '');
+								currentIndex++;
+							}
+						}
+
+						result.push(obj);
+					}
+					return result;
+				}
+			});
+
+			jQuery(document).on('click', '.removeCsvButton', function() {
+				let scheduleCell = jQuery(this).closest('tr').find('.required-entry');
+					scheduleCell.removeClass('disabled');
+					scheduleCell.val('');
+				jQuery(this).closest('tr').find('.add').removeClass('disabled');
+				//make button secondary again
+				let changeAddCsvButton = jQuery(this);
+					changeAddCsvButton.html("Upload CSV");
+					changeAddCsvButton.addClass('btn-seconary uploadButton');
+					changeAddCsvButton.removeClass('btn-danger removeCsvButton');
+					changeAddCsvButton.attr('data','');
+				//remove file from hidden input
+				jQuery(this).closest('td').find('input').val('');
+			});
+		});
 		</script>	
 		JS;
 		return $js;
+	}
+
+	//https://stackoverflow.com/questions/1734250/what-is-the-equivalent-of-javascripts-encodeuricomponent-in-php
+	private function encodeURIComponent($str) {
+		$revert = array('%21'=>'!', '%2A'=>'*', '%27'=>"'", '%28'=>'(', '%29'=>')');
+		return strtr(rawurlencode($str), $revert);
 	}
 
 	function console_log($output, $with_script_tags = true)

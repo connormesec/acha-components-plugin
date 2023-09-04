@@ -81,7 +81,6 @@ class Acha_Components_Roster
 
             $roster_request_url = "https://lscluster.hockeytech.com/feed/index.php?feed=statviewfeed&view=roster&team_id=" . $team_id . "&season_id=" . $season_id . "&key=e6867b36742a0c9d&client_code=acha&site_id=2&league_id=1&lang=en";
             $raw_roster = json_decode(substr(file_get_contents($roster_request_url), 1, -1))->roster[0]->sections; //this gets the roster from hockey tech, removes the parens, and parses the ugly response to JSON
-
             $pos_arr = [];
             foreach ($raw_roster as $position) {
                 if ($position->title === "Coaches") {
@@ -114,7 +113,6 @@ class Acha_Components_Roster
             ];
             array_push($player_arr, $clean_roster_data);
         }
-        //$this->console_log($player_arr);
         return $player_arr;
     }
 
@@ -151,7 +149,7 @@ class Acha_Components_Roster
             $roster_data = $this->player_arr[0];
             $content = '<div class="roster_container">';
 
-            function createPlayerCard($player_id, $team_id, $season_id, $headshot_image, $number, $name, $position, $hometown, $ht, $wt, $birthdate, $shoots, $year_in_school = null, $last_team = null)
+            function createPlayerCard($player_id, $team_id, $season_id, $headshot_image, $number, $name, $position, $hometown, $ht, $wt, $shoots, $year_in_school = null, $last_team = null)
             {
                 $player_card = '
             <div class="player_item clearfix" id="' . $player_id . '" data-team="'. $team_id .'" data-season="'. $season_id .'">
@@ -164,31 +162,28 @@ class Acha_Components_Roster
                 <div class="position">' . $position . '</div>
                 <div class="player_data">
                     <div>
-                        <span class="year">
+                        <span class="shoots">
                         Shoots: ' . $shoots . ' </span>
                         <span class="hometown">
                         Hometown: ' . $hometown . '</span>
                     </div>
                     <div>
                         <span class="height">
-                        HT/WT: ' . $ht . ' / ' . $wt . ' </span>
-                        <span class="birthdate">
-                        Birthdate: ' . $birthdate . ' </span>
-                    </div>';
-                if ($last_team || $year_in_school) {
-                    $player_card .= '<div>';
+                        HT/WT: ' . $ht . ' / ' . $wt . ' </span>';
                     if($year_in_school){
                         $player_card .= '
                             <span class="year">
                             Year: ' . $year_in_school . '</span>';
                     }
+                    $player_card .= '
+                    </div>';
                     if($last_team){
                         $player_card .= '
+                            <div>
                             <span class="prev_team">
-                            Last Team: ' . $last_team . '</span>';
+                            Last Team: ' . $last_team . '</span>
+                            </div>';
                     }
-                    $player_card .= ' </div> ';
-                }
                 $player_card .= '
                 </div>
             </div>
@@ -196,7 +191,6 @@ class Acha_Components_Roster
         ';
                 return $player_card;
             }
-            $this->console_log($roster_data);
             //forwards
             $content .= '<div class="player_position_title"><h2>Forwards</h2></div>';
             foreach ($roster_data->roster[0]->players as $player) {
@@ -215,7 +209,7 @@ class Acha_Components_Roster
                     $year_in_school = $player->year_in_school;
                 }
                 $headshot_image_link = "https://assets.leaguestat.com/acha/240x240/" . $player->player_id . ".jpg";
-                $content .= createPlayerCard($player->player_id, $roster_data->team_id, $roster_data->season_id, $headshot_image_link, $player->tp_jersey_number, $player->name, $player->position, $player->hometown, $player->height_hyphenated, $player->w, $player->birthdate, $player->shoots, $year_in_school, $last_team);
+                $content .= createPlayerCard($player->player_id, $roster_data->team_id, $roster_data->season_id, $headshot_image_link, $player->tp_jersey_number, $player->name, $player->position, $player->hometown, $player->height_hyphenated, $player->w, $player->shoots, $year_in_school, $last_team);
             }
             //defense
             $content .= '<div class="player_position_title"><h2 class="lower">Defense</h2></div>';
@@ -225,7 +219,7 @@ class Acha_Components_Roster
                     $last_team = $player->last_team;
                 }
                 $headshot_image_link = "https://assets.leaguestat.com/acha/240x240/" . $player->player_id . ".jpg";
-                $content .= createPlayerCard($player->player_id, $roster_data->team_id, $roster_data->season_id, $headshot_image_link, $player->tp_jersey_number, $player->name, $player->position, $player->hometown, $player->height_hyphenated, $player->w, $player->birthdate, $player->shoots, $year_in_school, $last_team);
+                $content .= createPlayerCard($player->player_id, $roster_data->team_id, $roster_data->season_id, $headshot_image_link, $player->tp_jersey_number, $player->name, $player->position, $player->hometown, $player->height_hyphenated, $player->w, $player->shoots, $year_in_school, $last_team);
             }
 
             //goalies
@@ -236,7 +230,7 @@ class Acha_Components_Roster
                     $last_team = $player->last_team;
                 }
                 $headshot_image_link = "https://assets.leaguestat.com/acha/240x240/" . $player->player_id . ".jpg";
-                $content .= createPlayerCard($player->player_id, $roster_data->team_id, $roster_data->season_id, $headshot_image_link, $player->tp_jersey_number, $player->name, $player->position, $player->hometown, $player->height_hyphenated, $player->w, $player->birthdate, $player->shoots, $year_in_school, $last_team);
+                $content .= createPlayerCard($player->player_id, $roster_data->team_id, $roster_data->season_id, $headshot_image_link, $player->tp_jersey_number, $player->name, $player->position, $player->hometown, $player->height_hyphenated, $player->w, $player->shoots, $year_in_school, $last_team);
             }
             $content .= '</div>';
             $content .= "
@@ -267,7 +261,7 @@ class Acha_Components_Roster
         $nonce = wp_create_nonce("update_roster_db_nonce");
         $content = '<div class="container">
 			<table id="roster_edit_table" class="table table-bordered">';
-        $content .= '<tr><th><h5>Roster</h5></th><th><h5>#</h5></th><th><h5>Name</h5></th><th><h5>Pos</h5></th><th><h5>DOB</h5></th><th><h5>Ht</h5></th><th><h5>Wt</h5></th><th><h5>Shoots</h5></th><th><h5>Hometown</h5></th><th><h5>ID</h5></th><th class="last_team_table_header"><h5>Last Team</h5></th><th class="year_in_school_table_header"><h5>Year</h5></th><th><h5>Actions</h5></th></tr>';
+        $content .= '<tr><th><h5>Roster</h5></th><th><h5>#</h5></th><th><h5>Name</h5></th><th><h5>Pos</h5></th></th><th><h5>Ht</h5></th><th><h5>Wt</h5></th><th><h5>Shoots</h5></th><th><h5>Hometown</h5></th><th><h5>ID</h5></th><th class="last_team_table_header"><h5>Last Team</h5></th><th class="year_in_school_table_header"><h5>Year</h5></th><th><h5>Actions</h5></th></tr>';
 
         foreach ($rosters as $roster) {
             $roster_title = $roster->roster_title;
@@ -294,7 +288,6 @@ class Acha_Components_Roster
                     $content .= '<td>' . $player->tp_jersey_number . '</td>';
                     $content .= '<td>' . $player->name . '</td>';
                     $content .= '<td>' . $player->position . '</td>';
-                    $content .= '<td>' . $player->birthdate . '</td>';
                     $content .= '<td>' . $player->height_hyphenated . '</td>';
                     $content .= '<td>' . $player->w . '</td>';
                     $content .= '<td>' . $player->shoots . '</td>';

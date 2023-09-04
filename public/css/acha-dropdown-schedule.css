@@ -92,6 +92,7 @@
   transition: none !important;
 }
 .month_container {
+  width: 100%;
   margin-bottom: 20px;
   overflow: hidden;
   min-height: 60px;

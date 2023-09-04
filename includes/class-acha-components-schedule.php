@@ -55,8 +55,21 @@ class Acha_Components_Schedule
                 continue;
             }
             $team_and_schedule_id = $this->_get_string_between($link, 'schedule/', '/all-months');
-            if (!$team_and_schedule_id) {
 
+            $b = array();
+
+            if (!$team_and_schedule_id) {
+                //check to see if csv data exists
+                $opt_name = 'admin_schedule_form_data';
+		        $opt_val = json_decode(stripslashes(get_option($opt_name)));
+                if($opt_val){
+                    foreach($opt_val->form_data as $schedule_row){
+                        if($schedule_row->csvData && $schedule_row->url[0] === $link){
+                            $csvGameArr = $this->formatCsvDataToSomethingThatWillWorkInTheGameScheduleArr(JSON_decode($schedule_row->csvData));
+                            $game_schedule_arr = array_merge($game_schedule_arr, $csvGameArr);
+                        }
+                    }
+                }
                 array_push($this->errors, "There was an error with '$link' please make sure it is a valid url");
                 continue;
             }
@@ -83,7 +96,6 @@ class Acha_Components_Schedule
             foreach ($logo_arr as $key => $value) {
                 $a[$value->id] = $value;
             }
-            $b = array();
             foreach ($raw_schedule as $game) {
                 $game_date_time_message = $game->row->date_with_day;
                 $game_time = '';
@@ -110,7 +122,7 @@ class Acha_Components_Schedule
                 if ($team_id == $game->prop->home_team_city->teamLink) {
                     $target_team = (object)[
                         'target_team_name' => $game->row->home_team_city,
-                        'opponent_team_name' => $game->row->visiting_team_city,
+                        'opponent_team_name' => $this->removeLeagueAbbrevAndShortenSchoolName($game->row->visiting_team_city),
                         'target_team_nickname' => $a[$game->prop->home_team_city->teamLink]->nickname,
                         'opponent_team_nickname' => $a[$game->prop->visiting_team_city->teamLink]->nickname,
                         'target_team_logo' => $a[$game->prop->home_team_city->teamLink]->logo,
@@ -135,7 +147,7 @@ class Acha_Components_Schedule
                     ];
                 } else {
                     $target_team = (object)[
-                        'opponent_team_name' => $game->row->home_team_city,
+                        'opponent_team_name' => $this->removeLeagueAbbrevAndShortenSchoolName($game->row->home_team_city),
                         'target_team_name' => $game->row->visiting_team_city,
                         'opponent_team_nickname' => $a[$game->prop->home_team_city->teamLink]->nickname,
                         'targett_team_nickname' => $a[$game->prop->visiting_team_city->teamLink]->nickname,
@@ -438,16 +450,15 @@ class Acha_Components_Schedule
         wp_add_inline_style('dropdown_style', $css);
         $month_games = $this->array_group_by($game_schedule_arr, 'month');
         $months = array('August', 'September', 'October', 'November', 'December', 'January', 'February', 'March', 'April');
-
         //determine right now in connortime
         $now = new DateTime();
         $now_connortime = $this->_ghettoOrder($now->format("M"), 1, 1)->order_value;
 
-        $content = '<div class="schedule_container css-transitions-only-after-page-load">';
+        $content = '<div class="schedule_container"  style="display:none">';
         foreach ($months as $month) {
             if (isset($month_games[$month])) {
                 $showActive = '';
-                if ($this->_ghettoOrder($month, 1, 1) >= $now_connortime) {
+                if ($this->_ghettoOrder($month, 1, 1)->order_value >= $now_connortime) {
                     $showActive = ' active';
                 }
                 $month_title = $month;
@@ -469,29 +480,37 @@ class Acha_Components_Schedule
                         $promotion_section = $this->addGameDetails($game->promotion_header_value, $game->promotion_text_value, $game->promotion_img_url);
                     }
                     $game_result_message = $this->gameResultMessage($game);
+                    $game_outcome_span = $game_result_message . ': ' . $game->target_score . ' - ' . $game->opponent_score;
+                    if($game_result_message === ''){
+                        $game_outcome_span = '';
+                    }
+
                     $content .= '<div class="game_list">
-                                <div class="date-time">
-                                    <span class="date">' . $game->game_date_day . '</span>
-                                    <span class="time">' . $game->game_status . '</span>
-                                </div>
-                                <div class="team_info">
-                                    <img class="msu_thumb" src="' . $game->target_team_logo . '"/>
-                                    <span class="vs">' . $vs_at . '</span>
-                                    <img src="' . $game->opponent_team_logo . '"/>
-                                    <span class="team_title">' . $game->opponent_team_name . '</span>
-                                </div>
-                                <div class="game_detail">
-                                    <span class="game_outcome">' . $game_result_message . ': ' . $game->target_score . ' - ' . $game->opponent_score . '</span>
-                                </div>
+                                    <div class="date-time">
+                                        <span class="date">' . $game->game_date_day . '</span>
+                                        <span class="time">' . $game->game_status . '</span>
+                                    </div>
+                                    <div class="team_info">
+                                        <img class="msu_thumb" src="' . $game->target_team_logo . '"/>
+                                        <span class="vs">' . $vs_at . '</span>
+                                        <img src="' . $game->opponent_team_logo . '"/>
+                                        <span class="team_title">' . $game->opponent_team_name . '</span>
+                                    </div>
+                                    <div class="game_detail">
+                                        <span class="game_outcome">' . $game_outcome_span . '</span>
+                                    </div>
                                 ' . $promotion_section . '
-                            </div>';
+                                </div>';
                 }
+                $content .= '</div></div>';
             }
-            $content .= '</div></div>';
+            
         }
 
         $content .= '</div>';
         $content .= '<script>
+                    $(document).ready(function () {
+                        $(".schedule_container").css("display", "");
                         var acc = document.getElementsByClassName("accordion");
                         var i;
     
@@ -518,12 +537,7 @@ class Acha_Components_Schedule
                         for (y = 0; y < x.length; y++) {
                             x[y].style.maxHeight = x[y].scrollHeight + "px";
                         }
-                        //makes sure to not show transition until after page load, css was changed too
-                        $(document).ready(function () {
-                            $(".css-transitions-only-after-page-load").each(function (index, element) {
-                                setTimeout(function () { $(element).removeClass("css-transitions-only-after-page-load") }, 10);
-                            });
-                        });
+                    });
                     </script>';
         return $content;
     }
@@ -555,8 +569,9 @@ class Acha_Components_Schedule
 
         //security number used only once that we verify before updating db in ajax call
         $nonce = wp_create_nonce("update_schedule_db_nonce");
-        $content = '<div class="container">
-			<table id="schedule_edit_table" class="table table-bordered">';
+        $content = '<div class="container-fluid">
+			<table id="schedule_edit_table" class="table table-bordered">
+                <tr><th><h5>Date/Time</h5></th><th><h5>Target Team</h5></th><th><h5>Score</h5></th><th><h5>Opponent</h5></th></th><th><h5>Score</h5></th><th><h5>ID</h5></th><th><h5>Promo Header</h5></th><th><h5>Promo Text</h5></th><th><h5>Promo Img Link</h5></th><th><h5>Action</h5></th></tr>';
         foreach ($arr as $result) {
             $text_value = '';
             $header_value = '';
@@ -572,39 +587,43 @@ class Acha_Components_Schedule
             $content .= '<td>' . $result->target_score . '</td>';
             $content .= '<td>' . $result->opponent_team_name . '</td>';
             $content .= '<td>' . $result->opponent_score . '</td>';
-            $content .= '<td id="' . $result->game_id . '">' . $result->game_id . '</td>';
-            $content .= '<td><input id="header_input_' . $result->game_id . '" type="string" value="' . stripslashes($header_value) . '"></td>';
-            $content .= '<td><textarea id="text_input_' . $result->game_id . '">' . stripslashes($text_value) . '</textarea></td>';
-            $content .= '<td><input id="img_input_' . $result->game_id . '" type="string" value="' . $img_link . '"></td>';
-            $content .= '<td><button id="_' . $result->game_id . '">Save</button>';
-            $content .= '<span class="successful_save_' . $result->game_id . '" style="display: none; color: green">Saved</span><span class="error_' . $result->game_id . '" style="display: none; color: red">Error</span></td>';
+            if($result->game_id){
+                $content .= '<td id="' . $result->game_id . '">' . $result->game_id . '</td>';
+                $content .= '<td><input id="header_input_' . $result->game_id . '" type="string" value="' . stripslashes($header_value) . '"></td>';
+                $content .= '<td><textarea id="text_input_' . $result->game_id . '">' . stripslashes($text_value) . '</textarea></td>';
+                $content .= '<td><input id="img_input_' . $result->game_id . '" type="string" value="' . $img_link . '"></td>';
+                $content .= '<td><button id="_' . $result->game_id . '">Save</button>';
+                $content .= '<span class="successful_save_' . $result->game_id . '" style="display: none; color: green">Saved</span><span class="error_' . $result->game_id . '" style="display: none; color: red">Error</span></td>';
+            }
             $content .= '</tr>';
-            $content .= "<script>
-			// This is the ajax script that will call a php function to update the db
-			jQuery('#_" . $result->game_id . "').click(function() {
+            if($result->game_id){
+                $content .= "<script>
+                // This is the ajax script that will call a php function to update the db
+                jQuery('#_" . $result->game_id . "').click(function() {
 
-				var text_input = jQuery('#text_input_" . $result->game_id . "').val();
-				var header_input = jQuery('#header_input_" . $result->game_id . "').val();
-				var img_input = jQuery('#img_input_" . $result->game_id . "').val();
+                    var text_input = jQuery('#text_input_" . $result->game_id . "').val();
+                    var header_input = jQuery('#header_input_" . $result->game_id . "').val();
+                    var img_input = jQuery('#img_input_" . $result->game_id . "').val();
 
-				var data = {
-				   'action'   : 'updateScheduleDB', // the name of your PHP function!
-				   'text_input' : text_input,
-				   'header_input' : header_input,
-					'img_input' : img_input,
-				   'game_id'   : " . $result->game_id . ",
-				   'nonce' : '" . $nonce . "'
-				   };
-				   jQuery.post(ajaxurl, data, function(response) {
-					if(response){
-						jQuery('.successful_save_" . $result->game_id . "').fadeIn().delay(1500).fadeOut();
-					}else{
-						jQuery('.error_" . $result->game_id . "').fadeIn().delay(1500).fadeOut();
-					};
-				  });
-            });
-            </script>
-            ";
+                    var data = {
+                    'action'   : 'updateScheduleDB', // the name of your PHP function!
+                    'text_input' : text_input,
+                    'header_input' : header_input,
+                        'img_input' : img_input,
+                    'game_id'   : " . $result->game_id . ",
+                    'nonce' : '" . $nonce . "'
+                    };
+                    jQuery.post(ajaxurl, data, function(response) {
+                        if(response){
+                            jQuery('.successful_save_" . $result->game_id . "').fadeIn().delay(1500).fadeOut();
+                        }else{
+                            jQuery('.error_" . $result->game_id . "').fadeIn().delay(1500).fadeOut();
+                        };
+                    });
+                });
+                </script>
+                ";
+            }
         }
         $content .= '</table></div>';
         return $content;
@@ -692,6 +711,41 @@ class Acha_Components_Schedule
 
         return $grouped;
     }
+
+    private function formatCsvDataToSomethingThatWillWorkInTheGameScheduleArr($csvData){
+        $b = [];
+        foreach($csvData as $game){
+            $dateNum = $this->extractNumberFromString($game->date);
+            $order = $this->_ghettoOrder($game->month, $dateNum, $game->time)->order_value;
+            $target_team = (object)[
+                'target_team_name' => null,
+                'opponent_team_name' => $this->removeLeagueAbbrevAndShortenSchoolName($game->opponent),
+                'target_team_nickname' => null,
+                'opponent_team_nickname' => null,
+                'target_team_logo' => $game->logoUrl,
+                'opponent_team_logo' => null,
+                'target_team_id' => null,
+                'opponent_team_id' => null,
+                'target_score' => null,
+                'opponent_score' => null,
+                'game_date_time_message' => $game->date,
+                'game_status' => $game->time,
+                'game_date_day' => $game->date,
+                'game_id' => null,
+                'order' => $order,
+                'month' => $game->month,
+                'home_or_away' => $game->home_or_away,
+                'game_time' => $game->time,
+                'venue_name' => $game->notes,
+                'has_extra_game_details' => null,
+                'promotion_header_value' => null,
+                'promotion_text_value' => null,
+                'promotion_img_url' => null
+            ];
+            array_push($b, $target_team);
+        }
+        return $b;
+    } 
 
     //this function aims to solve the problem that not having a year provided from the hcokey tech response causes
     //This turns the season into an int that can be compared to others
@@ -788,6 +842,28 @@ class Acha_Components_Schedule
         $noBreaks = str_replace("<p><br />", "<p>", $noBreaks);
         $noBreaks = str_replace("<p><br>", "<p>", $noBreaks);
         return $noBreaks;
+    }
+
+    private function extractNumberFromString($inputString) {
+        // Use a regular expression to find the first sequence of digits in the string
+        preg_match('/\d+/', $inputString, $matches);
+    
+        // Check if a number was found
+        if (isset($matches[0])) {
+            // Return the first matched number
+            return $matches[0];
+        } else {
+            // Return null if no number was found
+            return null;
+        }
+    }
+
+    private function removeLeagueAbbrevAndShortenSchoolName(string $school_name) {
+        $leagueAbbrevPattern = '/WD1 |WD2 |MD1 |MD2 |MD3 /i';
+        $nameWithoutAbbrev = preg_replace($leagueAbbrevPattern, '', $school_name);
+        $univPattern = '/ University|University of /i';
+        $finalName = preg_replace($univPattern, '', $nameWithoutAbbrev);
+        return $finalName;
     }
 
     function console_log($output, $with_script_tags = true)
