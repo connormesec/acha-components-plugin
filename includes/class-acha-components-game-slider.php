@@ -85,12 +85,12 @@ class Acha_Components_Game_Slider extends Acha_Components_Schedule
                                     </div>
                                     <div class="hometeam">
                                         <div class="thumb">
-                                            <img src="' . $game->opponent_team_logo . '" alt="away team" loading="lazy">
+                                            <img src="' . $game->opponent_team_logo . '" alt="'. $game->opponent_team_name .'" loading="lazy">
                                         </div>
                                     </div>
                                     <div class="awayteam_active">
                                         <div class="thumb ">
-                                            <img src="' . $game->target_team_logo . '" alt="MSU Bobcats" loading="lazy">
+                                            <img src="' . $game->target_team_logo . '" alt="" loading="lazy">
                                         </div>
                                     </div>
                                     <div class="details">

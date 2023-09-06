@@ -406,7 +406,7 @@ class Acha_Schedule_Admin_Form
 
 				function csvToJson(csv) {
 					//sketchy way of getting main logo via favicon
-					const logoUrl = jQuery('link[rel="icon"]').attr('href');
+					const logoUrl = jQuery('link[rel~="icon"]').prop('href');
 
 					const lines = csv.replace('\\r', '').split('\\n');
 					const result = [];
