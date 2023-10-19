@@ -66,7 +66,7 @@ class Acha_Components_Public
 				}
 			}
 		}
-		$schedule = new Acha_Components_Schedule($schedule_url_arr, $schedule_data->style);
+		$schedule = new Acha_Components_Schedule($schedule_url_arr, $schedule_data->style, $atts['title']);
 		if ($schedule_data->style->type === '1') {
 			return $schedule->buildPillSchedule();
 		} elseif ($schedule_data->style->type === '2') {
@@ -85,9 +85,6 @@ class Acha_Components_Public
 				} elseif ($roster_data->style->type === '2') {
 					return $roster_obj->buildPlayerCardRoster();
 				}
-			} else {
-				echo 'make sure the shortcode title matches the schedule title';
-				continue;
 			}
 		}
 	}
@@ -102,12 +99,9 @@ class Acha_Components_Public
 				foreach ($schedule->url as $url) {
 					array_push($schedule_url_arr, $url);
 				}
-			} else {
-				echo 'make sure the shortcode title matches the schedule title';
-				continue;
 			}
 		}
-		$schedule = new Acha_Components_Game_Slider($schedule_url_arr, $style->style);
+		$schedule = new Acha_Components_Game_Slider($schedule_url_arr, $style->style, $atts['title']);
 
 		return $schedule->buildGameSlider();
 	}

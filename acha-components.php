@@ -16,7 +16,7 @@
  * Plugin Name:       ACHA Components
  * Plugin URI:        https://tbd
  * Description:       Generates professional looking components for teams using the ACHA website. 
- * Version:           1.0.55
+ * Version:           1.0.56
  * Author:            Connor Mesec
  * Author URI:        https://https://github.com/connormesec/
  * License:           GPL-2.0+
@@ -35,7 +35,7 @@ if ( ! defined( 'WPINC' ) ) {
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'ACHA_COMPONENTS_VERSION', '1.0.55' );
+define( 'ACHA_COMPONENTS_VERSION', '1.0.56' );
 define( 'PLUGIN_DIR_PATH', plugin_dir_path( __FILE__ ) );
 
 /**

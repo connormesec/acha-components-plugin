@@ -38,7 +38,7 @@
       display: block;
       position: absolute;
       top: 36px;
-      right: 20px;
+      right: 5%;
       width: 72px;
       height: 72px;
       line-height: 72px;
@@ -74,7 +74,7 @@
   }
   .awayteam_active > .thumb {
       display: block;
-      left: 20px;
+      left: 5%;
       right: auto;
       position: absolute;
       top: 36px;

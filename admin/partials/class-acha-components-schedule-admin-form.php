@@ -47,6 +47,8 @@ class Acha_Schedule_Admin_Form
 			$dropdown = 'selected';
 		}
 		$html = <<<HTML
+				<input type="submit" class="btn btn-success btn-lg" name="submit" id="schedule_admin_submit" value="Update">
+				<div style="height:2rem"></div>
 				<div class="row">
 					<div class="col-md-12">
 						<div class="form-group">
@@ -67,7 +69,7 @@ class Acha_Schedule_Admin_Form
 			$encodedData = '';
 			$buttonText = 'Upload CSV';
 			$disabled = '';
-			if($row->csvData){
+			if(isset($row->csvData) && $row->csvData){
 				$csvButtonClassVals = 'btn-danger removeCsvButton';
 				$encodedData = $this->encodeURIComponent($row->csvData);
 				$buttonText = 'Remove CSV';
@@ -251,7 +253,71 @@ class Acha_Schedule_Admin_Form
 					
 					</div>
 				</div>
-				<input type="submit" class="btn btn-success" name="submit" id="schedule_admin_submit" value="Submit">
+		HTML;
+		if (isset($schedule_form_data->form_data[0]->customGameData)) {
+			$custom_games = $schedule_form_data->form_data[0]->customGameData;
+		} else {
+			$custom_games = [];
+		}
+		$custom_game_html = '';
+		foreach ($custom_games as $game){
+			$custom_game_html .= '
+			<tr>
+				<td> ' . $game->scheduleName . ' </td>
+				<td> ' . $game->targetTeamID . ' </td>
+				<td> ' . $game->opponentID . ' </td>
+				<td> ' . $game->gameMonth . ' </td>
+				<td> ' . $game->gameDate . ' </td>
+				<td> ' . $game->gameTime . ' </td>
+				<td> ' . $game->home_away . ' </td>
+				<td> ' . $game->location . ' </td>
+				<td><button class="delete-button">Delete</button></td>
+            </tr> ';
+		}
+		
+		$html .= <<<HTML
+				<div class="row">
+					<h3>Custom Games List</h3>
+					<div class="col-md-12">
+						<table class="table table-bordered" id="dynamic_field">
+							<tr>
+								<th>Schedule Name</th>
+								<th>Target Team ID</th>
+								<th>Opponent ID</th>
+								<th>Game Month</th>
+								<th>Game Date (ex. Thurs, Nov 16th)</th>
+								<th>Game Time (ex. 7:00pm CST)</th>
+								<th>Home/Away</th>
+								<th>Location</th>
+								<th>Action</th>
+							</tr>
+							<tbody id="gameList">
+								{$custom_game_html}
+								<!-- Existing game rows will be added here -->
+							</tbody>
+						</table>
+					</div>
+				</div>
+				<h4>Add a Custom Game</h4>
+				<form id="addGameForm">
+					<label for="scheduleName">Schedule Name:</label>
+					<input type="text" id="scheduleName" required>
+					<label for="targetTeamID">Target Team ID:</label>
+					<input type="text" id="targetTeamID" required>
+					<label for="opponentID">Opponent ID:</label>
+					<input type="text" id="opponentID" required>
+					<label for="gameMonth">Game Month:</label>
+					<input type="text" id="gameMonth" required>
+					<label for="gameDate">Game Date:</label>
+					<input type="text" id="gameDate" required>
+					<label for="gameTime">Game Time:</label>
+					<input type="text" id="gameTime" required>
+					<label for="home_away">Home/Away:</label>
+					<input type="text" id="home_away" required>
+					<label for="location">Location:</label>
+					<input type="text" id="location" required>
+					<input type="submit" value="Add Game">
+				</form>
 			</div>
 			<div style="height:2rem"></div>
 		HTML;
@@ -300,11 +366,29 @@ class Acha_Schedule_Admin_Form
 					if (csvButtonDataAttr){
 						csvData = decodeURIComponent(csvButtonDataAttr);
 					}
+
+					const customGameData = [];
+					jQuery("#gameList tr").each(function(index, row) {
+						const rowData = {
+							scheduleName: jQuery(row).find("td:eq(0)").text(),
+							targetTeamID: jQuery(row).find("td:eq(1)").text(),
+							opponentID: jQuery(row).find("td:eq(2)").text(),
+							gameMonth:jQuery(row).find("td:eq(3)").text(),
+							gameDate: jQuery(row).find("td:eq(4)").text(),
+							gameTime: jQuery(row).find("td:eq(5)").text(),
+							home_away: jQuery(row).find("td:eq(6)").text(),
+							location: jQuery(row).find("td:eq(7)").text(),
+						};
+						customGameData.push(rowData);
+					});
+		
+					
 					data_arr.push(
 						{
 							scheduleName, 
 							url,
-							csvData
+							csvData,
+							customGameData
 						}
 					);
 				});
@@ -455,6 +539,41 @@ class Acha_Schedule_Admin_Form
 				//remove file from hidden input
 				jQuery(this).closest('td').find('input').val('');
 			});
+
+			//js for custome game form
+			jQuery("#addGameForm").submit(function(e) {
+				e.preventDefault();
+				const scheduleName = jQuery("#scheduleName").val();
+				const targetTeamID = jQuery("#targetTeamID").val();
+				const opponentID = jQuery("#opponentID").val();
+				const gameMonth = jQuery("#gameMonth").val();
+				const gameDate = jQuery("#gameDate").val();
+				const gameTime = jQuery("#gameTime").val();
+				const home_away = jQuery("#home_away").val();
+				const location = jQuery("#location").val();
+
+				const newRow = 
+					'<tr><td>' + scheduleName + '</td>' + 
+					'<td>' + targetTeamID + '</td>' +
+						'<td>' + opponentID + '</td>' +
+						'<td>' + gameMonth + '</td>' +
+						'<td>' + gameDate + '</td>' +
+						'<td>' + gameTime + '</td>' +
+						'<td>' + home_away + '</td>' +
+						'<td>' + location + '</td>' +
+						'<td><button class="delete-button">Delete</button></td>' +
+					'</tr>';
+
+				jQuery("#gameList").append(newRow);
+
+				// Clear the input fields
+				jQuery("#scheduleName, #targetTeamID, #opponentID, #gameMonth, #gameDate, #gameTime, #home_away, #location").val("");
+			});
+
+			jQuery(document).on("click", ".delete-button", function() {
+				jQuery(this).closest("tr").remove();
+			});
+
 		});
 		</script>	
 		JS;

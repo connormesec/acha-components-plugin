@@ -34,19 +34,19 @@ class Acha_Components_Schedule
     public $style;
     public $errors;
 
-    public function __construct($arr_of_schedule_urls, $style = null)
+    public function __construct($arr_of_schedule_urls, $style = null, $schedule_name = '*')
     {
         $this->errors = [];
         $this->input = $arr_of_schedule_urls;
         $this->style = $style;
-        $temp_arr = $this->createGameScheduleArr($arr_of_schedule_urls);
+        $temp_arr = $this->createGameScheduleArr($arr_of_schedule_urls, $schedule_name);
         $this->schedule_arr = $temp_arr;
     }
 
-    public function createGameScheduleArr($arr_of_schedule_urls)
+    public function createGameScheduleArr($arr_of_schedule_urls, $schedule_name)
     {
         $schedule_edits = $this->getChangesFromDb();
-
+        $custom_game_arr = $this->buildCustomGameArr($schedule_name);
         $game_schedule_arr = array();
         foreach ($arr_of_schedule_urls as $link) {
             if (!$link) {
@@ -176,11 +176,11 @@ class Acha_Components_Schedule
             }
             $game_schedule_arr = array_merge($game_schedule_arr, $b);
         }
+        $game_schedule_arr = array_merge($game_schedule_arr, $custom_game_arr);
         //sort the game schedule array by order
         usort($game_schedule_arr, function ($a, $b) {
             return $a->order <=> $b->order;
         });
-
         return $game_schedule_arr;
     }
 
@@ -747,6 +747,67 @@ class Acha_Components_Schedule
         return $b;
     } 
 
+    private function buildCustomGameArr($schedule_name){
+        
+        $opt_name = 'admin_schedule_form_data';
+		$opt_val = json_decode(stripslashes(get_option($opt_name)));
+        if (isset($opt_val->form_data[0]->customGameData)) {
+			$custom_games = $opt_val->form_data[0]->customGameData;
+		} else {
+			$custom_games = [];
+		}
+		$custom_game_arr = [];
+        $mens_teams_url = "https://lscluster.hockeytech.com/feed/index.php?feed=statviewfeed&view=teamsForSeason&key=e6867b36742a0c9d&client_code=acha"; //men's teams
+        $womens_teams_url = "https://lscluster.hockeytech.com/feed/index.php?feed=statviewfeed&view=teamsForSeason&key=e6867b36742a0c9d&client_code=acha&season=35"; //women's teams
+        $mens_logo_arr = json_decode(substr(file_get_contents($mens_teams_url), 1, -1))->teams;
+        $womens_logo_arr = json_decode(substr(file_get_contents($womens_teams_url), 1, -1))->teams;
+        $team_arr = array_merge($mens_logo_arr, $womens_logo_arr);
+		foreach ($custom_games as $game){
+            if($game->scheduleName === $schedule_name || $schedule_name === '*'){
+                $targetTeamObj = $this->findObjectById($team_arr,trim($game->targetTeamID));
+                $opponentObj = $this->findObjectById($team_arr, trim($game->opponentID));
+                $dateNum = $this->extractNumberFromString($game->gameDate);
+                $order = $this->_ghettoOrder($game->gameMonth, $dateNum, $game->gameTime)->order_value;
+                $target_team = (object)[
+                    'target_team_name' => $this->removeLeagueAbbrevAndShortenSchoolName($targetTeamObj->name),
+                    'opponent_team_name' => $this->removeLeagueAbbrevAndShortenSchoolName($opponentObj->name),
+                    'target_team_nickname' => $targetTeamObj->nickname,
+                    'opponent_team_nickname' => $opponentObj->nickname,
+                    'target_team_logo' => $targetTeamObj->logo,
+                    'opponent_team_logo' => $opponentObj->logo,
+                    'target_team_id' => $targetTeamObj->id,
+                    'opponent_team_id' => $opponentObj->id,
+                    'target_score' => null,
+                    'opponent_score' => null,
+                    'game_date_time_message' => $game->gameDate . " @ " . $game->gameTime,
+                    'game_status' => $game->gameTime,
+                    'game_date_day' => $game->gameDate,
+                    'game_id' => null,
+                    'order' => $order,
+                    'month' => $game->gameMonth,
+                    'home_or_away' => $game->home_away,
+                    'game_time' => $game->gameTime,
+                    'venue_name' => $game->location,
+                    'has_extra_game_details' => null,
+                    'promotion_header_value' => null,
+                    'promotion_text_value' => null,
+                    'promotion_img_url' => null
+                ];
+                array_push($custom_game_arr, $target_team);
+            }
+        }
+        return $custom_game_arr;
+    }
+
+    private function findObjectById($array, $id) {
+        foreach ($array as $item) {
+            if (isset($item->id) && $item->id === $id) {
+                return $item;
+            }
+        }
+        return null; // Return null if the object with the specified id is not found
+    }
+
     //this function aims to solve the problem that not having a year provided from the hcokey tech response causes
     //This turns the season into an int that can be compared to others
     //ie Feb, 25, 8:15 pm MST becomes 6252015
@@ -793,9 +854,9 @@ class Acha_Components_Schedule
             $hour = $temp[0];
             $min = explode(" ", $temp[1])[0];
             if (preg_match("/pm|PM/i", $time) == 1) {
-                $order_value = (int)$order_value + ($hour * 100) + 1200 + $min;
+                $order_value = (int)$order_value + ((int)$hour * 100) + 1200 + (int)$min;
             } else {
-                $order_value = (int)$order_value + ($hour * 100) + $min;
+                $order_value = (int)$order_value + ((int)$hour * 100) + (int)$min;
             }
         }
         $obj = (object)[
