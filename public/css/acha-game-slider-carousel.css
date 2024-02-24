@@ -1,7 +1,7 @@
 /*3 upcoming games shortcodes*/
 
 @media screen and (min-width: 800px) and (max-width: 1200px) {
-    .et_pb_code_1 {
+    .glider-contain {
       width: 780px;
       margin: 0 auto;
     }

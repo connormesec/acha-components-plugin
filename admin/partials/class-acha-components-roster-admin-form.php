@@ -36,7 +36,6 @@ class Acha_Roster_Admin_Form
 
     private function buildCustomAdminForm($roster_form_data = null)
     {
-        $this->console_log($roster_form_data);
         //if null set form data to an empty object so form will render properly
         if ($roster_form_data === null || $roster_form_data->form_data == null) {
             $roster_form_data = json_decode(stripslashes('{\"style\":{\"type\":\"1\",\"primaryColor\":\"#000000\",\"secondaryColor\":\"#000000\",\"textColor\":\"#000000\",\"containerBgColor\":\"#000000\",\"headerTextColor\":\"#000000\"},\"form_data\":[{\"rosterName\":\"\",\"url\":\"\",\"last_team\":\"\",\"year_in_school\":\"\"}]}')); //todo: make this handle no data better
@@ -66,6 +65,19 @@ class Acha_Roster_Admin_Form
         $i = 1;
         $j = 1;
         foreach ($roster_arr as $row) {
+
+            //handle csv values
+			$csvButtonClassVals = 'uploadButton';
+			$encodedData = '';
+			$buttonText = 'Upload CSV';
+			$disabled = '';
+			if(isset($row->csvData) && $row->csvData){
+				$csvButtonClassVals = 'btn-danger removeCsvButton';
+				$encodedData = $this->encodeURIComponent($row->csvData);
+				$buttonText = 'Remove CSV';
+				$disabled = 'disabled';
+			}
+
             $show_last_team = '';
             if ($row->last_team === "yes_last_team") {
                 $show_last_team = 'checked="checked"';
@@ -113,7 +125,7 @@ class Acha_Roster_Admin_Form
                                 <input	type="text" id="ac-shortcode" onfocus="this.select();" readonly="readonly" class="large-text code" value='[ac-roster title="{$roster_name}"]'>
                             </td>
                             <td>
-                                <button type="button" name="add" id="add" class="btn btn-primary">Add Roster</button>
+                                <button type="button" name="add" id="add" class="btn btn-primary">Add Roster</button> <button type="button" id="row_1" data="{$encodedData}" class="{$csvButtonClassVals} btn btn-secondary btn-sm">{$buttonText}</button><input type="file" id="row_1" class="csvFileInput" style="display: none;" accept=".csv">
                             </td>
                         </tr>
                     HTML;
@@ -259,11 +271,9 @@ class Acha_Roster_Admin_Form
                     
                     jQuery('.custom-control-input').change(function() {
                         if (jQuery(this).is(':checked')){
-                            console.log('ischecked');
                             jQuery(this).attr('checked', true);
                             //jQuery(this).removeAttr('checked');
                         }else{
-                            console.log('isNOTchecked');
                             jQuery(this).removeAttr('checked')
                             //jQuery(this).attr('checked');
                         }
@@ -336,12 +346,19 @@ class Acha_Roster_Admin_Form
                         if(jQuery(this).find('.YOS').is(':checked')) {
                             year_in_school = jQuery(this).find('.YOS').val();
                         }
+                        //remember: we change the url value to the name of the csv so we will use this value to check localstorage
+                        const csvButtonDataAttr = jQuery(this).find('.removeCsvButton').attr('data');
+                        let csvData = null;
+                        if (csvButtonDataAttr){
+                            csvData = decodeURIComponent(csvButtonDataAttr);
+                        }
                         data_arr.push(
                             { 
                             rosterName, 
                             url,
                             last_team,
-                            year_in_school
+                            year_in_school,
+                            csvData
                         });
                     });
                     const style = jQuery('#rosterStyleSelect').val();
@@ -367,11 +384,9 @@ class Acha_Roster_Admin_Form
                     }),
                     'nonce' : '{$nonce}'
                     };
-                    console.log(data)
                     jQuery('#spinner-div').show();
                     jQuery.post(ajaxurl, data, function(response) {
                         if (response) {
-                            console.log(response);
                             jQuery("#error_table").remove();
                             jQuery("#roster_edit_table").replaceWith(response);
                         }
@@ -392,8 +407,97 @@ class Acha_Roster_Admin_Form
                 jQuery('#dynamic_field').on('input propertychange paste ', '.form-control', function () {
                     jQuery(this).parent().next('td').next('td').find('#ac-shortcode').val('[ac-roster title="' + jQuery(this).val() +'"]');
                 });
+                    //csv upload button
+                    jQuery(document).on('click', '.uploadButton', function() {
+                        alert('Make sure your CSV is formatted properly...\\n' +
+                                'Header row needs to match these values exactly! \\n' +
+                                'headshot_link,number,name,pos,ht,wt,shoots,hometown,last_team,year_in_school,major\\n' +
+                                'Example Row:\\n' +
+                                'google.com,12,Connor Mesec,F,6\'1,220,\"Menlo Park, CA\",SJ Jr Sharks,Freshman,Biology');
+                        jQuery(this).closest('td').find('input').click();
+                    });
+                    // Handle the file input change event
+                    jQuery(document).on('change', '.csvFileInput', function() {
+                        let row = jQuery(this).attr('id');
+                        // Get the selected file
+                        const selectedFile = this.files[0];
+                        let changeAddCsvButton = jQuery(this).closest('td').find('.uploadButton');
+                    
+                        // Check if a file was selected
+                        if (selectedFile) {
+                            const reader = new FileReader();
+                            let data;
+                            reader.onload = function(e) {
+                                const csvText = e.target.result;
+                                const jsonData = csvToJson(csvText);
+                                // You can display the JSON data or perform further actions here
+                                data = JSON.stringify(jsonData);
+                                
+                                changeAddCsvButton.attr('data', encodeURIComponent(data));
+                            }
+                            reader.readAsText(selectedFile);
 
-                });	
+                            let scheduleCell = jQuery(this).closest('tr').find('.required-entry');
+                                scheduleCell.val(selectedFile.name);
+                                scheduleCell.addClass('disabled');
+                            
+                            jQuery(this).closest('tr').find('.add').addClass('disabled');
+                            //make button red
+                                changeAddCsvButton.html("Remove CSV");
+                                changeAddCsvButton.removeClass('btn-seconary uploadButton');
+                                changeAddCsvButton.addClass('btn-danger removeCsvButton');
+                            
+                        }
+
+                        function csvToJson(csv) {
+                            const lines = csv.replace('\\r', '').split('\\n');
+                            const result = [];
+                            const headers = lines[0].split(',');
+                            for (let i = 1; i < lines.length; i++) {
+                                const obj = {};
+                                const currentLine = lines[i].split(',');
+                                let currentIndex = 0;
+                                
+                                for (let j = 0; j < headers.length; j++) {
+                                    // Check if the value contains a double quote
+                                    if (currentLine[currentIndex].startsWith('"')) {
+                                        let combinedValue = currentLine[currentIndex].replace(/^"/, '');
+
+                                        while (!currentLine[currentIndex].endsWith('"')) {
+                                            currentIndex++;
+                                            combinedValue += ',' + currentLine[currentIndex];
+                                        }
+
+                                        combinedValue = combinedValue.replace(/"$/, ''); // Remove trailing double quote
+                                        currentIndex++;
+                                        obj[headers[j]] = combinedValue.replace('\\r', '');
+                                    } else {
+                                        obj[headers[j]] = currentLine[currentIndex].replace('\\r', '');
+                                        currentIndex++;
+                                    }
+                                }
+
+                                result.push(obj);
+                            }
+                            return result;
+                        }
+                    });
+
+                    jQuery(document).on('click', '.removeCsvButton', function() {
+                        let scheduleCell = jQuery(this).closest('tr').find('.required-entry');
+                            scheduleCell.removeClass('disabled');
+                            scheduleCell.val('');
+                        jQuery(this).closest('tr').find('.add').removeClass('disabled');
+                        //make button secondary again
+                        let changeAddCsvButton = jQuery(this);
+                            changeAddCsvButton.html("Upload CSV");
+                            changeAddCsvButton.addClass('btn-seconary uploadButton');
+                            changeAddCsvButton.removeClass('btn-danger removeCsvButton');
+                            changeAddCsvButton.attr('data','');
+                        //remove file from hidden input
+                        jQuery(this).closest('td').find('input').val('');
+                    });
+                }); 
             </script>	
             JS;
         return $js;
@@ -402,6 +506,11 @@ class Acha_Roster_Admin_Form
     public function enqueue_scripts() {
         wp_enqueue_script('roster_js', plugin_dir_url(dirname(__FILE__)) . 'js/acha-components-admin-roster.js', array('jquery'));
     }
+    //https://stackoverflow.com/questions/1734250/what-is-the-equivalent-of-javascripts-encodeuricomponent-in-php
+	private function encodeURIComponent($str) {
+		$revert = array('%21'=>'!', '%2A'=>'*', '%27'=>"'", '%28'=>'(', '%29'=>')');
+		return strtr(rawurlencode($str), $revert);
+	}
     function console_log($output, $with_script_tags = true)
     {
         $js_code = 'console.log(' . json_encode($output, JSON_HEX_TAG) .

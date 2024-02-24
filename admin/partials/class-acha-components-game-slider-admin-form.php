@@ -192,7 +192,6 @@ class Acha_Game_Slider_Admin_Form
                         }),
                         'nonce' : '{$nonce}'
                         };
-                        console.log(data)
                         jQuery('#spinner-div').show();
                         jQuery.post(ajaxurl, data, function(response) {
                             jQuery('#spinner-div').hide();

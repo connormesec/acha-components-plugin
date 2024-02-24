@@ -450,9 +450,9 @@ class Acha_Schedule_Admin_Form
 			jQuery(document).on('click', '.uploadButton', function() {
 				alert('Make sure your CSV is formatted properly...\\n' +
 						'Header row needs to match these values exactly! \\n' +
-						'month,date,time,opponent,home_or_away,notes\\n' +
+						'month,date,time,target_score,opponent_score,opponent,opponent_logo,home_or_away,notes\\n' +
 						'Example Row:\\n' +
-						'September,\"Friday, Sep 22nd\",6:30 PM,Boise State,Home,Ressler Rink');
+						'September,\"Friday, Sep 22nd\",6:30 PM,6,4,Boise State,logourl,Home,Ressler Rink');
 				jQuery(this).closest('td').find('input').click();
 			});
 			// Handle the file input change event

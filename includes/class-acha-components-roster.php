@@ -71,6 +71,31 @@ class Acha_Components_Roster
             }
             $team_and_schedule_id = $this->get_string_between($roster->url, 'roster/', '?');
             if (!$team_and_schedule_id) {
+                //check to see if csv data exists
+                $opt_name = 'admin_roster_form_data';
+		        $opt_val = json_decode(stripslashes(get_option($opt_name)));
+                if($opt_val){
+                    foreach($opt_val->form_data as $roster_row){
+                        if($roster_row->csvData && $roster_row->url === $roster->url){
+                            $csvGameArr = $this->formatCsvDataToSomethingThatWillWorkInThePlayerArr(JSON_decode($roster_row->csvData));
+                            $clean_roster_data = (object)[
+                                'roster_title' => $roster->rosterName,
+                                'roster' => $csvGameArr,
+                                'show_last_team' => $roster->last_team,
+                                'show_year_in_school' => $roster->year_in_school,
+                                'style' => $style,
+                                'team_id' => null,
+                                'season_id' => null
+                            ];
+                            array_push($player_arr, $clean_roster_data);
+                        }
+                    }
+                }
+                array_push($this->errors, "There was an error with '$roster->url' please make sure it is a valid url");
+                continue;
+            }
+            
+            if (!$team_and_schedule_id) {
 
                 array_push($this->errors, "There was an error with '$roster->url' please make sure it is a valid url");
                 continue;
@@ -208,7 +233,12 @@ class Acha_Components_Roster
                 if (isset($player->year_in_school)) {
                     $year_in_school = $player->year_in_school;
                 }
-                $headshot_image_link = "https://assets.leaguestat.com/acha/240x240/" . $player->player_id . ".jpg";
+                $headshot_image_link = "https://www.pathwaysvermont.org/wp-content/uploads/2017/03/avatar-placeholder-e1490629554738.png";
+                if (isset($player->player_id) && $player->player_id !== null){
+                    $headshot_image_link = "https://assets.leaguestat.com/acha/240x240/" . $player->player_id . ".jpg";
+                } else if (isset($player->headshot_link) && $player->player_id == null) { //else check csv headshot
+                    $headshot_image_link = $player->headshot_link;
+                }
                 $content .= createPlayerCard($player->player_id, $roster_data->team_id, $roster_data->season_id, $headshot_image_link, $player->tp_jersey_number, $player->name, $player->position, $player->hometown, $player->height_hyphenated, $player->w, $player->shoots, $year_in_school, $last_team);
             }
             //defense
@@ -218,7 +248,12 @@ class Acha_Components_Roster
                 if (isset($player->last_team)) {
                     $last_team = $player->last_team;
                 }
-                $headshot_image_link = "https://assets.leaguestat.com/acha/240x240/" . $player->player_id . ".jpg";
+                $headshot_image_link = "https://www.pathwaysvermont.org/wp-content/uploads/2017/03/avatar-placeholder-e1490629554738.png";
+                if (isset($player->player_id) && $player->player_id !== null){
+                    $headshot_image_link = "https://assets.leaguestat.com/acha/240x240/" . $player->player_id . ".jpg";
+                } else if (isset($player->headshot_link) && $player->player_id == null) { //else check csv headshot
+                    $headshot_image_link = $player->headshot_link;
+                }
                 $content .= createPlayerCard($player->player_id, $roster_data->team_id, $roster_data->season_id, $headshot_image_link, $player->tp_jersey_number, $player->name, $player->position, $player->hometown, $player->height_hyphenated, $player->w, $player->shoots, $year_in_school, $last_team);
             }
 
@@ -229,7 +264,12 @@ class Acha_Components_Roster
                 if (isset($player->last_team)) {
                     $last_team = $player->last_team;
                 }
-                $headshot_image_link = "https://assets.leaguestat.com/acha/240x240/" . $player->player_id . ".jpg";
+                $headshot_image_link = "https://www.pathwaysvermont.org/wp-content/uploads/2017/03/avatar-placeholder-e1490629554738.png";
+                if (isset($player->player_id) && $player->player_id !== null){
+                    $headshot_image_link = "https://assets.leaguestat.com/acha/240x240/" . $player->player_id . ".jpg";
+                } else if (isset($player->headshot_link) && $player->player_id == null) { //else check csv headshot
+                    $headshot_image_link = $player->headshot_link;
+                }
                 $content .= createPlayerCard($player->player_id, $roster_data->team_id, $roster_data->season_id, $headshot_image_link, $player->tp_jersey_number, $player->name, $player->position, $player->hometown, $player->height_hyphenated, $player->w, $player->shoots, $year_in_school, $last_team);
             }
             $content .= '</div>';
@@ -238,6 +278,7 @@ class Acha_Components_Roster
             // This is the ajax script that will call a php function to update the db
             jQuery('.player_item').click(function() {
                 let playerId = jQuery(this).attr('id');
+                if (!playerId) { return; };
                 let teamId = jQuery(this).data('team');
                 let seasonId = jQuery(this).data('season');
                 var searchParams = new URLSearchParams(window.location.search)
@@ -275,6 +316,9 @@ class Acha_Components_Roster
             }
             foreach ($roster->roster as $position) {
                 foreach ($position->players as $player) {
+                    if ($player->player_id == null) {
+                        continue;
+                    }
                     $last_team_value = '';
                     if (isset($player->last_team)) {
                         $last_team_value = $player->last_team;
@@ -349,6 +393,76 @@ class Acha_Components_Roster
         $ini += strlen($start);
         $len = strpos($string, $end, $ini) - $ini;
         return substr($string, $ini, $len);
+    }
+
+    private function formatCsvDataToSomethingThatWillWorkInThePlayerArr($csvData){
+        $roster[0] = (object) array(
+            'title' => 'Forwards',
+            'players' => array()
+        );
+        $roster[1] = (object) array(
+            'title' => 'Defense',
+            'players' => array()
+        );
+        $roster[2] = (object) array(
+            'title' => 'Goalies',
+            'players' => array()
+        );
+        foreach($csvData as $player){
+           if( strtolower($player->pos) == 'forward' || strtolower($player->pos) == 'f'){
+                $target_team = (object)[
+                    'headshot_link' => $player->headshot_link,
+                    'height_hyphenated' => $player->ht,
+                    'hometown' => $player->hometown,
+                    'last_team' => $player->last_team,
+                    'name' => $player->name,
+                    'player_id' => null,
+                    'position' => $player->pos,
+                    'rookie' => null,
+                    'shoots' => $player->shoots,
+                    'tp_jersey_number' => $player->number,
+                    'w' => $player->wt,
+                    'year_in_school' => $player->year_in_school,
+                    'major' => $player->major,
+                ];
+                array_push($roster[0]->players, $target_team);
+            } else if ( strtolower($player->pos) == 'defense' || strtolower($player->pos) == 'd'){
+                $target_team = (object)[
+                    'headshot_link' => $player->headshot_link,
+                    'height_hyphenated' => $player->ht,
+                    'hometown' => $player->hometown,
+                    'last_team' => $player->last_team,
+                    'name' => $player->name,
+                    'player_id' => null,
+                    'position' => $player->pos,
+                    'rookie' => null,
+                    'shoots' => $player->shoots,
+                    'tp_jersey_number' => $player->number,
+                    'w' => $player->wt,
+                    'year_in_school' => $player->year_in_school,
+                    'major' => $player->major,
+                ];
+                array_push($roster[1]->players, $target_team); 
+            } else if ( strtolower($player->pos) == 'goalie' || strtolower($player->pos) == 'g'){
+                $target_team = (object)[
+                    'headshot_link' => $player->headshot_link,
+                    'height_hyphenated' => $player->ht,
+                    'hometown' => $player->hometown,
+                    'last_team' => $player->last_team,
+                    'name' => $player->name,
+                    'player_id' => null,
+                    'position' => $player->pos,
+                    'rookie' => null,
+                    'shoots' => $player->shoots,
+                    'tp_jersey_number' => $player->number,
+                    'w' => $player->wt,
+                    'year_in_school' => $player->year_in_school,
+                    'major' => $player->major,
+                ];
+                array_push($roster[2]->players, $target_team); 
+            }
+        }
+        return $roster;
     }
 
     function console_log($output, $with_script_tags = true)

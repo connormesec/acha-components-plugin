@@ -66,12 +66,10 @@ class Acha_Components_Auto_Game_Summary_Admin_form
                     jQuery('#spinner-div').hide();
                     jQuery('.custom-control-input').change(function() {
                         if (jQuery(this).is(':checked')){
-                            console.log('ischecked');
                             jQuery(this).attr('checked', true);
                             jQuery('#inputPassword').prop('disabled', false);
                             //jQuery(this).removeAttr('checked');
                         }else{
-                            console.log('isNOTchecked');
                             jQuery(this).removeAttr('checked')
                             jQuery('#inputPassword').prop('disabled', true)
                             //jQuery(this).attr('checked');
@@ -95,12 +93,10 @@ class Acha_Components_Auto_Game_Summary_Admin_form
                             }),
                             'nonce' : '{$nonce}'
                             };
-                            console.log(data)
                             jQuery('#spinner-div').show();
                             jQuery.post(ajaxurl, data, function(response) {
                                 if (response) {
                                     alert(response);
-                                    console.log(response);
                                 }
                                 jQuery('#spinner-div').hide();
                             });
@@ -122,12 +118,10 @@ class Acha_Components_Auto_Game_Summary_Admin_form
                             }),
                             'nonce' : '{$test_nonce}'
                             };
-                            console.log(data)
                             jQuery('#spinner-div').show();
                             jQuery.post(ajaxurl, data, function(response) {
                                 if (response) {
                                     alert(response);
-                                    console.log(response);
                                 }
                                 jQuery('#spinner-div').hide();
                             });
