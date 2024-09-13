@@ -106,10 +106,52 @@ class Acha_Components_Public
 		return $schedule->buildGameSlider();
 	}
 
-	public function do_thing_hourly()
+	public function fireAutoPostCron()
+	{
+		$option_data = json_decode(stripslashes(get_option('admin_auto_post_settings'))); //get_option defaults to false if the option does not exist
+		$pw = '';
+		$enable_game_summary = '';
+		$enable_insta_posts = '';
+		$insta_id = '';
+		$default_img_url = '';
+		if (isset($option_data->options->user_password)) {
+			$pw = $option_data->options->user_password;
+		} else {
+			error_log( "When running the auto post cron no password was detected" );
+		}
+		if (isset($option_data->options->enable_game_summary)) {
+			$enable_game_summary = $option_data->options->enable_game_summary;
+		} else {
+			error_log( "When running the auto post cron no game summary enablement was detected, it was expecting an empty string or 'enable_game_summary' but got nothing" );
+		}
+		if (isset($option_data->options->enable_insta_posts)) {
+			$enable_insta_posts = $option_data->options->enable_insta_posts;
+		} else {
+			error_log( "When running the auto post cron no game insta post enablement was detected, it was expecting an empty string or 'enable_insta_posts' but got nothing" );
+		}
+		if (isset($option_data->options->insta_id)) {
+			$insta_id = $option_data->options->insta_id;
+		} else {
+			error_log( "When running the auto post cron no insta post id was detected, it was expecting an empty string or string but got nothing" );
+		}
+		if (isset($option_data->options->default_img_url)) {
+			$default_img_url = $option_data->options->default_img_url;
+		} else {
+			error_log( "When running the auto post cron no default_img_url was detected, it was expecting an empty string or image url but got nothing" );
+		}
+		
+		if ($enable_game_summary === 'enable_game_summary') {
+			$this->sendDataToCreateGameSummaryWithOpenAIAPI($pw);
+		}
+		if ($enable_insta_posts === 'enable_insta_post' && $insta_id !== '') {
+			$this->sendDataToInstaPostToWpPostAPI($pw, $insta_id);
+		}
+
+	}
+	
+	private function sendDataToCreateGameSummaryWithOpenAIAPI($password)
 	{
 		$schedule_data = json_decode(stripslashes(get_option('admin_schedule_form_data')));
-		$password = json_decode(stripslashes(get_option('admin_game_summary_form')));
 		$url = 'https://llygrsc22i.execute-api.us-east-2.amazonaws.com/default/acha-componenets-game-summary-api';
 		$data = new stdClass();
 		$data->isTest = false;
@@ -118,29 +160,35 @@ class Acha_Components_Public
 		$body = json_encode($data);
 		$headers = [
 			'Content-type: application/json',
-			'Authorization: Basic ' . base64_encode($password->options->user_password)
+			'Authorization: Basic ' . base64_encode($password)
 		];
-		// use key 'http' even if you send the request to https://...
-		$options = array(
-			'http' => array(
-				'header'  => "Content-type: application/json\r\nAuthorization: Basic " . base64_encode($password->options->user_password),
-				'method'  => 'POST',
-				'content' => json_encode($data)
-			)
-		);
-		//$context  = stream_context_create($options);
-		//$result = file_get_contents($url, false, $context);
+		$this->sendNonBlockingPostRequest($headers, $body, $url);
+	}
+
+	private function sendDataToInstaPostToWpPostAPI($password, $insta_id)
+	{
+		$url = 'https://llygrsc22i.execute-api.us-east-2.amazonaws.com/default/acha-components-facebook-to-wppost-api';
+		$data = new stdClass();
+		$data->isTest = false;
+		$data->insta_id = $insta_id;
+		$data->home_url = home_url();
+		$body = json_encode($data);
+		$headers = [
+			'Content-type: application/json',
+			'Authorization: Basic ' . base64_encode($password)
+		];
+		
 		$this->sendNonBlockingPostRequest($headers, $body, $url);
 	}
 
 	public function gameSummaryPostTest(){
-		if (!wp_verify_nonce($_REQUEST['nonce'], "game_summary_test_nonce")) {
+		if (!wp_verify_nonce($_REQUEST['nonce'], "auto_post_test_nonce")) {
 			exit("No naughty business please");
 		}
 		$opt_value = $_POST['data'];
 		$gameId = json_decode(stripslashes($opt_value))->options->gameId;
 		$teamId = json_decode(stripslashes($opt_value))->options->targetTeamId;
-		$password = json_decode(stripslashes(get_option('admin_game_summary_form')));
+		$password = json_decode(stripslashes(get_option('admin_auto_post_settings')));
 		$url = 'https://llygrsc22i.execute-api.us-east-2.amazonaws.com/default/acha-componenets-game-summary-api';
 		$data = new stdClass();
 		$data->isTest = true;
@@ -240,5 +288,53 @@ class Acha_Components_Public
 			$js_code = '<script>' . $js_code . '</script>';
 		}
 		echo $js_code;
+	}
+
+	function post_log($data){
+		$url = 'https://6100f7c8-a916-420d-a0b6-69380eaf9748.mock.pstmn.io';
+
+		// use key 'http' even if you send the request to https://...
+		$options = [
+			'http' => [
+				'header' => "Content-type: application/x-www-form-urlencoded\r\n",
+				'method' => 'POST',
+				'content' => http_build_query($data),
+			],
+		];
+
+		$context = stream_context_create($options);
+		$result = file_get_contents($url, false, $context);
+		if ($result === false) {
+			/* Handle error */
+		}
+	}
+
+	function create_html_file_in_plugin_root($filename, $content) {
+		// Get the root directory of the plugin
+		$plugin_root = plugin_dir_path(__FILE__);
+	
+		// Ensure the filename ends with .html
+		if (substr($filename, -5) !== '.html') {
+			$filename .= '.html';
+		}
+	
+		// Construct the full path for the new HTML file
+		$file_path = $plugin_root . $filename;
+	
+		// Check if the file already exists
+		if (file_exists($file_path)) {
+			// If the file exists, inform that it will be overwritten
+			$message = "File already exists. Overwriting: " . $filename;
+		} else {
+			// If the file doesn't exist, inform that it will be created
+			$message = "Creating new file: " . $filename;
+		}
+	
+		// Write the content to the file (overwrites if it already exists)
+		if (file_put_contents($file_path, $content) !== false) {
+			return $message . " - Operation successful.";
+		} else {
+			return "Failed to create or overwrite the file: " . $filename;
+		}
 	}
 }

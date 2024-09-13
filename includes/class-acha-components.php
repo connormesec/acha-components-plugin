@@ -164,8 +164,9 @@ class Acha_Components
 		$this->loader->add_action('wp_ajax_updateAdminScheduleDB', $plugin_admin, 'updateAdminScheduleDB');
 		$this->loader->add_action('wp_ajax_updateRosterDB', $plugin_admin, 'updateRosterDB');
 		$this->loader->add_action('wp_ajax_updateAdminRosterDB', $plugin_admin, 'updateAdminRosterDB');
-		$this->loader->add_action('wp_ajax_updateGameSummaryOption', $plugin_admin, 'updateGameSummaryOption');
+		$this->loader->add_action('wp_ajax_updateAutoPostOption', $plugin_admin, 'updateAutoPostOption');
 		$this->loader->add_action('wp_ajax_updateAdminGameSliderDB', $plugin_admin, 'updateAdminGameSliderDB');
+		$this->loader->add_action('wp_ajax_get_wp_options_via_ajax', $plugin_admin, 'get_wp_options_via_ajax');
 	}
 
 	/**
@@ -184,6 +185,7 @@ class Acha_Components
 		$this->loader->add_action('wp_enqueue_scripts', $plugin_public, 'enqueue_scripts');
 		$this->loader->add_action('wp_ajax_playerCardPage', $plugin_public, 'playerCardPage');
 		$this->loader->add_action('wp_ajax_gameSummaryPostTest', $plugin_public, 'gameSummaryPostTest');
+
 		// Add our Shortcodes
 		$this->loader->add_shortcode('ac-schedule', $plugin_public, 'schedule_builder_shortcode');
 		$this->loader->add_shortcode('ac-game-slider', $plugin_public, 'game_slider_shortcode');
@@ -191,7 +193,7 @@ class Acha_Components
 
 		//add scheduled event CRON JOB
 		$this->loader->add_filter('cron_schedules', $plugin_public, 'my_cron_schedules');
-		$this->loader->add_action('test_hook', $plugin_public, 'do_thing_hourly');
+		$this->loader->add_action('acha_tools_auto_post_cron', $plugin_public, 'fireAutoPostCron');
 	}
 
 	/**

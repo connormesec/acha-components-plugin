@@ -66,7 +66,7 @@ class Acha_Components_Admin
 		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-acha-components-playerStat-page.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/class-acha-components-schedule-admin-form.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/class-acha-components-roster-admin-form.php';
-		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/class-acha-components-auto-game-summary-admin-form.php';
+		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/class-acha-components-auto-post-creator-admin-form.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/class-acha-components-game-slider-admin-form.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/update.php';
 	}
@@ -84,10 +84,9 @@ class Acha_Components_Admin
 
 	public function ac_settings_init()
 	{
-
 		add_option('admin_schedule_form_data');
 		add_option('admin_roster_form_data');
-		add_option('admin_game_summary_form');
+		add_option('admin_auto_post_settings');
 	}
 
 	public function ac_options_page()
@@ -109,14 +108,14 @@ class Acha_Components_Admin
 			<nav class="nav-tab-wrapper">
 				<a href="?page=acha-components" class="nav-tab <?php if ($tab === null) : ?>nav-tab-active<?php endif; ?>">Schedule</a>
 				<a href="?page=acha-components&tab=roster" class="nav-tab <?php if ($tab === 'roster') : ?>nav-tab-active<?php endif; ?>">Roster</a>
-				<a href="?page=acha-components&tab=game_summary" class="nav-tab <?php if ($tab === 'game_summary') : ?>nav-tab-active<?php endif; ?>">Game Summary</a>
-					<a href="?page=acha-components&tab=game_slider" class="nav-tab <?php if ($tab === 'game_slider') : ?>nav-tab-active<?php endif; ?>">Game Slider</a>
+				<a href="?page=acha-components&tab=auto_post" class="nav-tab <?php if ($tab === 'auto_post') : ?>nav-tab-active<?php endif; ?>">Auto Post</a>
+				<a href="?page=acha-components&tab=game_slider" class="nav-tab <?php if ($tab === 'game_slider') : ?>nav-tab-active<?php endif; ?>">Game Slider</a>
 			</nav>
 
 			<div class="tab-content">
 				<?php switch ($tab):
-					case 'game_summary':
-						echo $this->gameSummarySettingsHtml(); //Put your HTML here
+					case 'auto_post':
+						echo $this->autoPostCreatorSettingsHtml(); //Put your HTML here
 						break;
 					case 'roster':
 						echo $this->rosterSettingsHtml();
@@ -194,21 +193,21 @@ class Acha_Components_Admin
 		return $content;
 	}
 
-	private function gameSummarySettingsHtml()
+	private function autoPostCreatorSettingsHtml()
 	{
 		$content = '<div id="spinner-div" class="pt-5">
 				<div class="spinner-border text-primary" role="status">
 				</div>
 			</div>
 			<div class="container-fluid">
-			<h2>Game Summary </h2>
+			<h2>Automatically Create Posts</h2>
 			';
-		$gs_form = new Acha_Components_Auto_Game_Summary_Admin_form;
+		$gs_form = new Acha_Components_Auto_Post_Creator_Admin_form;
 		$content .= $gs_form->form_HTML();
 		$content .= '</div>';
 
 		//if data already exists
-		// if (get_option('admin_game_summary_form')) {
+		// if (get_option('admin_auto_post_settings')) {
 
 		// }
 		return $content;
@@ -228,7 +227,7 @@ class Acha_Components_Admin
 		$content .= '</div>';
 
 		//if data already exists
-		// if (get_option('admin_game_summary_form')) {
+		// if (get_option('admin_auto_post_settings')) {
 
 		// }
 		return $content;
@@ -269,6 +268,7 @@ class Acha_Components_Admin
 
 		wp_die();
 	}
+
 	public function updateAdminScheduleDB()
 	{
 		if (!wp_verify_nonce($_REQUEST['nonce'], "update_admin_schedule_db_nonce")) {
@@ -373,18 +373,19 @@ class Acha_Components_Admin
 		wp_die();
 	}
 
-	public function updateGameSummaryOption()
+	public function updateAutoPostOption()
 	{
-		if (!wp_verify_nonce($_REQUEST['nonce'], "game_summary_nonce")) {
+		if (!wp_verify_nonce($_REQUEST['nonce'], "auto_post_nonce")) {
 			exit("No naughty business please");
 		}
 		$opt_value = $_POST['data'];
 		$pw = json_decode(stripslashes($opt_value))->options->user_password;
 		$enable_game_summary = json_decode(stripslashes($opt_value))->options->enable_game_summary;
-		$opt_name = 'admin_game_summary_form';
+		$enable_insta_posts = json_decode(stripslashes($opt_value))->options->enable_insta_posts;
+		$opt_name = 'admin_auto_post_settings';
 		$existing_val = get_option($opt_name);
 		//if enable game summary is not checked delete user and cron if they exist
-		if ($enable_game_summary === '') {
+		if ($enable_game_summary === '' && $enable_insta_posts === '') {
 			$this->delete_user_author();
 			$this->cron_job_delete();
 			update_option($opt_name, $opt_value);
@@ -407,6 +408,31 @@ class Acha_Components_Admin
 			}
 		}
 
+		wp_die();
+	}
+
+	public function get_wp_options_via_ajax() {
+		if (!wp_verify_nonce($_REQUEST['nonce'], "auto_post_nonce")) {
+			exit("No naughty business please");
+		}
+	
+		// Retrieve the option names from the AJAX request
+		$option_names = isset($_POST['option_names']) ? $_POST['option_names'] : array();
+	
+		// Initialize an array to hold the options
+		$options = array();
+	
+		// Loop through each option name and fetch the corresponding value from the database
+		if (!empty($option_names) && is_array($option_names)) {
+			foreach ($option_names as $option_name) {
+				$options[$option_name] = json_decode(stripslashes(get_option($option_name)));
+			}
+		}
+	
+		// Send the options as a JSON response
+		wp_send_json_success($options);
+	
+		// Stop further execution
 		wp_die();
 	}
 
@@ -435,14 +461,14 @@ class Acha_Components_Admin
 
 	private function create_cron()
 	{
-		if (!wp_next_scheduled('test_hook')) {
-			wp_schedule_event(time(), 'twicedaily', 'test_hook');
+		if (!wp_next_scheduled('acha_tools_auto_post_cron')) {
+			wp_schedule_event(time(), 'twicedaily', 'acha_tools_auto_post_cron');
 		}
 	}
 	public function cron_job_delete()
 	{
-		if (wp_next_scheduled('test_hook')) {
-			wp_clear_scheduled_hook('test_hook');
+		if (wp_next_scheduled('acha_tools_auto_post_cron')) {
+			wp_clear_scheduled_hook('acha_tools_auto_post_cron');
 		}
 	}
 	private function create_user_author($pw)

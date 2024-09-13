@@ -51,8 +51,8 @@ class Acha_Components_Deactivator
 		}
 		function cron_job_delete()
 		{
-			if (wp_next_scheduled('test_hook')) {
-				wp_clear_scheduled_hook('test_hook');
+			if (wp_next_scheduled('acha_tools_auto_post_cron')) {
+				wp_clear_scheduled_hook('acha_tools_auto_post_cron');
 			}
 		}
 		cron_job_delete();
