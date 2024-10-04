@@ -167,6 +167,8 @@ class Acha_Components
 		$this->loader->add_action('wp_ajax_updateAutoPostOption', $plugin_admin, 'updateAutoPostOption');
 		$this->loader->add_action('wp_ajax_updateAdminGameSliderDB', $plugin_admin, 'updateAdminGameSliderDB');
 		$this->loader->add_action('wp_ajax_get_wp_options_via_ajax', $plugin_admin, 'get_wp_options_via_ajax');
+		$this->loader->add_action('wp_ajax_updateUpcomingGamesTableOptions', $plugin_admin, 'updateUpcomingGamesTableOptions');
+		$this->loader->add_action('wp_ajax_updateUpcomingGamesTableAdminDemoTable', $plugin_admin, 'updateUpcomingGamesTableAdminDemoTable');
 	}
 
 	/**
@@ -189,6 +191,7 @@ class Acha_Components
 		// Add our Shortcodes
 		$this->loader->add_shortcode('ac-schedule', $plugin_public, 'schedule_builder_shortcode');
 		$this->loader->add_shortcode('ac-game-slider', $plugin_public, 'game_slider_shortcode');
+		$this->loader->add_shortcode('ac-upcoming-games-table', $plugin_public, 'upcoming_games_table_shortcode');
 		$this->loader->add_shortcode('ac-roster', $plugin_public, 'roster_builder_shortcode');
 
 		//add scheduled event CRON JOB

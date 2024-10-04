@@ -106,6 +106,23 @@ class Acha_Components_Public
 		return $schedule->buildGameSlider();
 	}
 
+	public function upcoming_games_table_shortcode($atts)
+	{
+		$schedule_data = json_decode(stripslashes(get_option('admin_schedule_form_data')));
+		$style = json_decode(stripslashes(get_option('admin_upcoming_games_form_data')));
+		$schedule_url_arr = [];
+		foreach ($schedule_data->form_data as $schedule) {
+			if ($atts['title'] === $schedule->scheduleName) {
+				foreach ($schedule->url as $url) {
+					array_push($schedule_url_arr, $url);
+				}
+			}
+		}
+		$table = new Acha_Components_Upcoming_Games_Table($schedule_url_arr, $style->style, $atts['title']);
+
+		return $table->buildUpcomingGameTable();
+	}
+
 	public function fireAutoPostCron()
 	{
 		$option_data = json_decode(stripslashes(get_option('admin_auto_post_settings'))); //get_option defaults to false if the option does not exist
@@ -288,53 +305,5 @@ class Acha_Components_Public
 			$js_code = '<script>' . $js_code . '</script>';
 		}
 		echo $js_code;
-	}
-
-	function post_log($data){
-		$url = 'https://6100f7c8-a916-420d-a0b6-69380eaf9748.mock.pstmn.io';
-
-		// use key 'http' even if you send the request to https://...
-		$options = [
-			'http' => [
-				'header' => "Content-type: application/x-www-form-urlencoded\r\n",
-				'method' => 'POST',
-				'content' => http_build_query($data),
-			],
-		];
-
-		$context = stream_context_create($options);
-		$result = file_get_contents($url, false, $context);
-		if ($result === false) {
-			/* Handle error */
-		}
-	}
-
-	function create_html_file_in_plugin_root($filename, $content) {
-		// Get the root directory of the plugin
-		$plugin_root = plugin_dir_path(__FILE__);
-	
-		// Ensure the filename ends with .html
-		if (substr($filename, -5) !== '.html') {
-			$filename .= '.html';
-		}
-	
-		// Construct the full path for the new HTML file
-		$file_path = $plugin_root . $filename;
-	
-		// Check if the file already exists
-		if (file_exists($file_path)) {
-			// If the file exists, inform that it will be overwritten
-			$message = "File already exists. Overwriting: " . $filename;
-		} else {
-			// If the file doesn't exist, inform that it will be created
-			$message = "Creating new file: " . $filename;
-		}
-	
-		// Write the content to the file (overwrites if it already exists)
-		if (file_put_contents($file_path, $content) !== false) {
-			return $message . " - Operation successful.";
-		} else {
-			return "Failed to create or overwrite the file: " . $filename;
-		}
 	}
 }

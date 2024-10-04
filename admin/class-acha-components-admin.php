@@ -64,10 +64,12 @@ class Acha_Components_Admin
 		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-acha-components-game-slider.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-acha-components-roster.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-acha-components-playerStat-page.php';
+		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/class-acha-components-upcoming-games-table.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/class-acha-components-schedule-admin-form.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/class-acha-components-roster-admin-form.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/class-acha-components-auto-post-creator-admin-form.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/class-acha-components-game-slider-admin-form.php';
+		require_once plugin_dir_path(dirname(__FILE__)) . 'admin/partials/class-acha-components-upcoming-table-admin-form.php';
 		require_once plugin_dir_path(dirname(__FILE__)) . 'includes/update.php';
 	}
 
@@ -87,6 +89,8 @@ class Acha_Components_Admin
 		add_option('admin_schedule_form_data');
 		add_option('admin_roster_form_data');
 		add_option('admin_auto_post_settings');
+		add_option('admin_game_slider_form_data');
+		add_option('admin_upcoming_games_form_data');
 	}
 
 	public function ac_options_page()
@@ -99,7 +103,7 @@ class Acha_Components_Admin
 		$default_tab = null;
 		$tab = isset($_GET['tab']) ? $_GET['tab'] : $default_tab;
 
-?>
+	?>
 		<!-- Our admin page content should all be inside .wrap -->
 		<div class="wrap">
 			<!-- Print the page title -->
@@ -110,6 +114,7 @@ class Acha_Components_Admin
 				<a href="?page=acha-components&tab=roster" class="nav-tab <?php if ($tab === 'roster') : ?>nav-tab-active<?php endif; ?>">Roster</a>
 				<a href="?page=acha-components&tab=auto_post" class="nav-tab <?php if ($tab === 'auto_post') : ?>nav-tab-active<?php endif; ?>">Auto Post</a>
 				<a href="?page=acha-components&tab=game_slider" class="nav-tab <?php if ($tab === 'game_slider') : ?>nav-tab-active<?php endif; ?>">Game Slider</a>
+				<a href="?page=acha-components&tab=upcoming_games_table" class="nav-tab <?php if ($tab === 'upcoming_games_table') : ?>nav-tab-active<?php endif; ?>">Upcoming Games Table</a>
 			</nav>
 
 			<div class="tab-content">
@@ -122,6 +127,9 @@ class Acha_Components_Admin
 						break;
 					case 'game_slider':
 						echo $this->gameSliderSettingsHtml();
+						break;
+					case 'upcoming_games_table':
+						echo $this->upcomingGamesTableHtml();
 						break;
 					default:
 						echo $this->scheduleSettingsHtml();
@@ -233,6 +241,22 @@ class Acha_Components_Admin
 		return $content;
 	}
 
+	private function upcomingGamesTableHtml()
+	{
+		$content = '<div id="spinner-div" class="pt-5">
+				<div class="spinner-border text-primary" role="status">
+				</div>
+			</div>
+			<div class="container-fluid">
+			<h2>Upcoming Games Table</h2>
+			';
+		$gs_form = new Acha_Upcoming_Games_Table_Admin_Form;
+		$content .= $gs_form->admin_form_html;
+		$content .= '</div>';
+
+		return $content;
+	}
+
 	public function updateScheduleDB()
 	{
 		if (!wp_verify_nonce($_REQUEST['nonce'], "update_schedule_db_nonce")) {
@@ -245,10 +269,13 @@ class Acha_Components_Admin
 		$text = $_POST['text_input'];
 		$header = $_POST['header_input'];
 		$img_value = $_POST['img_input'];
+		$tickets_url = $_POST['tickets_input'];
+
+		$this->add_wpdb_column_if_not_exists($table_name, 'tickets_link', 'VARCHAR(200)'); //this exists so I can add the column without needing to manually change the db
 
 		$response = '';
 		//prevents from populating db when inputs are empty
-		if ($text === '' && $header === '' && $img_value === '') {
+		if ($text === '' && $header === '' && $img_value === '' && $tickets_url === '') {
 			$response = $wpdb->delete($table_name, array('game_id' => $game_id));
 		} else {
 			$response = $wpdb->replace(
@@ -257,10 +284,11 @@ class Acha_Components_Admin
 					'game_id' => $game_id,
 					'text' => $text,
 					'header_text' => $header,
-					'img_link' => $img_value
+					'img_link' => $img_value,
+					'tickets_link' => $tickets_url
 				),
 				array(
-					'%d', '%s', '%s', '%s'
+					'%d', '%s', '%s', '%s', '%s'
 				)
 			);
 		}
@@ -459,6 +487,29 @@ class Acha_Components_Admin
 		wp_die();
 	}
 
+	public function updateUpcomingGamesTableOptions() {
+		if (!wp_verify_nonce($_REQUEST['nonce'], "upcoming_games_form_nonce")) {
+			exit("No naughty business please");
+		}
+
+		$opt_value = $_POST['upcoming_games_table_data'];
+		$opt_name = 'admin_upcoming_games_form_data';
+		$existing_val = get_option($opt_name);
+		if (false !== $existing_val) {
+			// option exist
+			if ($existing_val === $opt_value) {
+				//echo "new value is same as old.";
+			} else {
+				update_option($opt_name, $opt_value);
+			}
+		} else {
+			// option not exist
+			add_option($opt_name, $opt_value);
+		}
+
+		wp_die();
+	}
+
 	private function create_cron()
 	{
 		if (!wp_next_scheduled('acha_tools_auto_post_cron')) {
@@ -490,6 +541,35 @@ class Acha_Components_Admin
 		$user_id = username_exists($user_name);
 		if ($user_id) {
 			wp_delete_user($user_id);
+		}
+	}
+
+	function add_wpdb_column_if_not_exists($table, $column, $column_definition) {
+		global $wpdb;
+	
+		// Ensure the table name includes the WordPress prefix
+		$table_name = $table;
+	
+		// Check if the column exists
+		$column_exists = $wpdb->get_results(
+			$wpdb->prepare(
+				"SHOW COLUMNS FROM `$table_name` LIKE %s", 
+				$column
+			)
+		);
+	
+		// If the column does not exist, add it
+		if (empty($column_exists)) {
+			$alter_query = "ALTER TABLE `$table_name` ADD `$column` $column_definition";
+			$result = $wpdb->query($alter_query);
+	
+			if ($result !== false) {
+				echo "Column '$column' added to table '$table_name'.";
+			} else {
+				echo "Error adding column '$column': " . $wpdb->last_error;
+			}
+		} else {
+			echo "Column '$column' already exists in table '$table_name'.";
 		}
 	}
 
